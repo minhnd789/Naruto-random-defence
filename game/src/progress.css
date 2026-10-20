@@ -1,0 +1,567 @@
+/* ================= Giai đoạn 3: nâng cấp, vượt ải, bí cảnh ================= */
+.small {
+  font-size: 12px;
+}
+.stars .awk,
+.awk-stars {
+  font-style: normal;
+  color: #7af0ff;
+  margin-left: 3px;
+  font-size: 10px;
+}
+.awk-stars {
+  color: var(--gold);
+  margin: 0;
+  letter-spacing: -2px;
+  font-size: 9px;
+}
+.lv {
+  font-style: normal;
+  font-size: 11px;
+  font-weight: 800;
+  color: #9fd8ff;
+}
+.lv-big {
+  font-size: 14px;
+  font-weight: 900;
+  color: #9fd8ff;
+  vertical-align: middle;
+}
+.power {
+  margin-top: 2px;
+  font-size: 12px;
+  font-weight: 900;
+  color: #ffb84a;
+}
+.form-ok {
+  color: #b8ffd0;
+  background: rgba(40, 180, 90, 0.18);
+  border: 1px solid rgba(90, 230, 140, 0.4);
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 700;
+}
+.warn {
+  margin: 0 0 10px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #ffb3a0;
+}
+.btn-fight .cost {
+  font-size: 13px;
+  font-style: normal;
+  opacity: 0.8;
+}
+
+/* Thể lực */
+.cur-stamina i {
+  background: linear-gradient(135deg, #7af0ff, #1d7ad0);
+}
+
+/* Vật phẩm */
+.item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 9px 2px 2px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid color-mix(in srgb, var(--c) 45%, transparent);
+  white-space: nowrap;
+}
+.item i {
+  font-style: normal;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  font-weight: 900;
+  color: #fff;
+  background: color-mix(in srgb, var(--c) 70%, #000);
+}
+.item small {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--muted);
+}
+.item.lack b {
+  color: #ff8a8a;
+}
+.inv-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-left: auto;
+}
+.inv-strip .item small {
+  display: none;
+}
+.reward-list {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin: 8px 0;
+}
+.rl-label {
+  min-width: 72px;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--gold);
+}
+
+/* Nâng cấp */
+.upgrade {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.up-block {
+  padding: 12px;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.up-block p {
+  margin: 0;
+  line-height: 1.45;
+}
+.up-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.up-head b {
+  font-size: 14px;
+}
+.up-head span {
+  font-weight: 900;
+}
+.stars .dim {
+  font-style: normal;
+  color: rgba(255, 255, 255, 0.18);
+}
+.exp-bar {
+  position: relative;
+  height: 18px;
+  border-radius: 9px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.08);
+}
+.exp-bar i {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: linear-gradient(90deg, #2fb36a, #9dffb8);
+  transition: width 0.4s ease;
+}
+.exp-bar small {
+  position: relative;
+  display: block;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 18px;
+  text-shadow: 0 1px 2px #000;
+}
+.up-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.up-btns {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1.6fr;
+  gap: 6px;
+}
+.btn-up {
+  padding: 9px 10px;
+  border-radius: 10px;
+  font-weight: 900;
+  font-size: 13px;
+  cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: linear-gradient(180deg, #3a5aa8, #1c2a5a);
+}
+.btn-up.gold {
+  color: #2a1000;
+  border-color: #fff3c4;
+  background: linear-gradient(180deg, #ffe08a, #ff9d2e);
+}
+.btn-up:disabled {
+  filter: grayscale(1) brightness(0.55);
+  cursor: not-allowed;
+}
+.req {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 8px;
+  color: #ff9a9a;
+  background: rgba(200, 40, 60, 0.15);
+}
+.req.ok {
+  color: #a8ffc4;
+  background: rgba(40, 180, 90, 0.15);
+}
+.awk-row i {
+  font-style: normal;
+  font-size: 16px;
+  opacity: 0.2;
+  margin-left: 2px;
+}
+.awk-row i.on {
+  opacity: 1;
+  text-shadow: 0 0 8px currentColor;
+}
+.coll-wrap.sel .hero-card {
+  box-shadow: 0 0 0 2px #fff, 0 0 18px rgba(255, 255, 255, 0.4);
+}
+
+/* Đội địch */
+.enemy-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 8px 0 12px;
+}
+.enemy-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+}
+.enemy-chip small {
+  font-size: 11px;
+  font-weight: 900;
+}
+
+/* Bản đồ vượt ải */
+.chapter-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.chip:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.map-panel {
+  padding: 0;
+  overflow: hidden;
+}
+.map {
+  position: relative;
+  min-height: 520px;
+  background:
+    linear-gradient(90deg, rgba(10, 6, 14, 0.2), rgba(10, 6, 14, 0.75)),
+    var(--boss) right -40px top -20px / auto 150% no-repeat,
+    radial-gradient(800px 400px at 20% 100%, rgba(255, 120, 60, 0.35), transparent 70%),
+    linear-gradient(160deg, #2a1838, #120a18);
+}
+.map-head {
+  position: absolute;
+  left: 22px;
+  top: 18px;
+  max-width: 60%;
+  z-index: 1;
+}
+.map-head small {
+  color: var(--gold);
+  font-weight: 900;
+}
+.map-head h3 {
+  margin: 2px 0 4px;
+  font-size: 30px;
+  font-weight: 900;
+  font-style: italic;
+  text-shadow: 0 3px 12px #000;
+}
+.map-head p {
+  margin: 0;
+  color: #d8cce0;
+  font-size: 13px;
+}
+.map-path {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.map-path path {
+  fill: none;
+  stroke: rgba(255, 207, 90, 0.45);
+  stroke-width: 0.8;
+  stroke-dasharray: 2 1.5;
+  vector-effect: non-scaling-stroke;
+  stroke-width: 4px;
+}
+.node {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  font-size: 22px;
+  font-weight: 900;
+  border: 3px solid rgba(255, 255, 255, 0.4);
+  background: radial-gradient(circle at 50% 35%, #5a3a70, #1a0f22);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.6);
+  transition: transform 0.15s;
+}
+.node > div {
+  border-radius: 50%;
+}
+.node:hover:not(:disabled) {
+  transform: translate(-50%, -50%) scale(1.08);
+}
+.node small {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  font-size: 11px;
+  font-weight: 900;
+  padding: 1px 7px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.7);
+}
+.node.cleared {
+  border-color: var(--gold);
+  background: radial-gradient(circle at 50% 35%, #a8742a, #3a2008);
+}
+.node.cleared small {
+  color: var(--gold);
+}
+.node.open {
+  border-color: #fff;
+  animation: nodePulse 1.4s ease-in-out infinite;
+}
+@keyframes nodePulse {
+  50% {
+    box-shadow: 0 0 0 8px rgba(255, 255, 255, 0.15), 0 0 24px rgba(255, 207, 90, 0.7);
+  }
+}
+.node.locked {
+  opacity: 0.45;
+  cursor: not-allowed;
+  filter: grayscale(1);
+}
+.node.boss {
+  width: 72px;
+  height: 72px;
+  border-color: #ff4d5e;
+  overflow: visible;
+}
+.node.boss.cleared {
+  border-color: var(--gold);
+}
+.node.sel {
+  outline: 3px solid var(--gold);
+  outline-offset: 4px;
+}
+.stage-info h3 {
+  margin: 2px 0 8px;
+  font-size: 24px;
+  font-weight: 900;
+  font-style: italic;
+}
+.boss-tag {
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  color: #fff;
+  background: #c4202e;
+}
+.si-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 800;
+}
+.si-meta span {
+  padding: 3px 9px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.4);
+}
+.si-meta .stam {
+  color: #7af0ff;
+}
+.stage-info .btn-fight {
+  margin-top: 8px;
+}
+
+/* Bí cảnh */
+.dungeon-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.dungeon-card {
+  position: relative;
+  text-align: left;
+  padding: 16px;
+  border-radius: 16px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  background: linear-gradient(140deg, color-mix(in srgb, var(--c) 30%, #1a0f22), #120a18);
+}
+.dungeon-card.on {
+  border-color: var(--c);
+  box-shadow: 0 0 20px color-mix(in srgb, var(--c) 40%, transparent);
+}
+.dc-k {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  font-size: 24px;
+  font-weight: 900;
+  color: #fff;
+  background: color-mix(in srgb, var(--c) 75%, #000);
+  margin-bottom: 4px;
+}
+.dungeon-card b {
+  font-size: 18px;
+  font-weight: 900;
+  font-style: italic;
+}
+.dungeon-card small {
+  color: var(--muted);
+  font-size: 12px;
+}
+.dungeon-card em {
+  font-style: normal;
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--c);
+}
+.dungeon-detail {
+  border-color: color-mix(in srgb, var(--c) 40%, transparent);
+}
+.tiers {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.tier {
+  padding: 10px 6px;
+  border-radius: 12px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(0, 0, 0, 0.35);
+}
+.tier small {
+  font-size: 11px;
+  color: var(--muted);
+}
+.tier.done b::after {
+  content: ' ✓';
+  color: var(--gold);
+}
+.tier.on {
+  border-color: var(--c);
+  background: color-mix(in srgb, var(--c) 22%, #000);
+}
+.tier:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.el-pick {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+.el-chip {
+  padding: 5px 11px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-weight: 800;
+  font-size: 13px;
+  color: var(--el);
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid color-mix(in srgb, var(--el) 40%, transparent);
+}
+.el-chip.on {
+  color: #120a18;
+  background: var(--el);
+}
+
+/* Sảnh: ô đôi */
+.tile-pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.tile-pair .menu-tile {
+  min-height: 76px;
+}
+.tile-pair .menu-tile b {
+  font-size: 17px;
+}
+.menu-tile.dungeon .mt-k {
+  background: linear-gradient(135deg, #ffb84a, #b0601a);
+}
+.menu-tile.practice .mt-k {
+  background: linear-gradient(135deg, #7af0ff, #1d6ab0);
+}
+
+/* Kết quả trận có xác thực */
+.server-result {
+  margin: -6px 0 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+}
+.server-result .reward-list {
+  justify-content: center;
+  margin: 2px 0;
+}
+
+@media (max-width: 900px) {
+  .dungeon-cards {
+    grid-template-columns: 1fr;
+  }
+  .tiers {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+  .map {
+    min-height: 420px;
+  }
+  .map-head {
+    max-width: 90%;
+  }
+  .up-btns {
+    grid-template-columns: 1fr 1fr;
+  }
+}
