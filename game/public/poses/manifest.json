@@ -2,13 +2,79 @@
  "feet": 0.96,
  "stand": 0.8,
  "heroes": {
+  "choji": [
+   "attack",
+   "cast",
+   "dash",
+   "hit"
+  ],
   "gaara": [
    "attack",
    "cast",
    "dash",
    "hit"
   ],
+  "hinata": [
+   "attack",
+   "cast",
+   "dash",
+   "hit"
+  ],
+  "ino": [
+   "attack",
+   "cast",
+   "dash",
+   "hit"
+  ],
+  "itachi": [
+   "attack",
+   "cast",
+   "dash",
+   "hit"
+  ],
+  "kakashi": [
+   "attack",
+   "cast",
+   "dash",
+   "hit"
+  ],
+  "kiba": [
+   "attack",
+   "cast",
+   "dash",
+   "hit"
+  ],
+  "kisame": [
+   "attack",
+   "cast",
+   "dash",
+   "hit"
+  ],
+  "lee": [
+   "attack",
+   "cast",
+   "dash",
+   "hit"
+  ],
+  "madara": [
+   "attack",
+   "cast",
+   "dash",
+   "hit"
+  ],
+  "minato": [
+   "attack",
+   "cast",
+   "dash",
+   "hit"
+  ],
   "naruto_sage": [
+   "attack",
+   "cast",
+   "dash",
+   "hit"
+  ],
+  "pain": [
    "attack",
    "cast",
    "dash",
@@ -21,6 +87,36 @@
    "hit"
   ],
   "sasuke_ems": [
+   "attack",
+   "cast",
+   "dash",
+   "hit"
+  ],
+  "shikamaru": [
+   "attack",
+   "cast",
+   "dash",
+   "hit"
+  ],
+  "shino": [
+   "attack",
+   "cast",
+   "dash",
+   "hit"
+  ],
+  "temari": [
+   "attack",
+   "cast",
+   "dash",
+   "hit"
+  ],
+  "tenten": [
+   "attack",
+   "cast",
+   "dash",
+   "hit"
+  ],
+  "tsunade": [
    "attack",
    "cast",
    "dash",
