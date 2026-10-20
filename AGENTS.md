@@ -8,6 +8,8 @@ Theo **`docs/POSE_BRIEF.md`**: 4 tư thế (dash, attack, cast, hit) mỗi ninja
 
 Đã có: naruto_sage, sasuke_ems, gaara, sakura.
 
+**Việc đang cần (đợt 2):** 16 ninja ở mục C2 của brief: itachi, kakashi, minato, tsunade, kisame, hinata, madara, pain, tenten, kiba, shino, choji, shikamaru, lee, ino, temari. Thư mục `art/poses/<hero_id>/` đã tạo sẵn.
+
 ## Đã xong
 
 - Ảnh nền và spritesheet hiệu ứng: `docs/ART_BRIEF.md` → `art/bg/`, `art/fx/` (bản game trong `game/public/bg`, `game/public/fx`).

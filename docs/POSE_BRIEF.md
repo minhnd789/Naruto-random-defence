@@ -1,7 +1,7 @@
-# Brief ảnh tư thế nhân vật (đợt thử: 4 ninja)
+# Brief ảnh tư thế nhân vật (20 ninja)
 
 > **Instructions for Codex (agent):**
-> 1. For each ninja in the table below, create the 4 pose images listed in section B, using the ninja's **reference image** as the identity source (same face, hair, outfit, colors, accessories, art style). Prefer your image tool's *edit / reference image* mode: give it the reference PNG and ask for the new pose.
+> 1. For each ninja in sections C (done) and **C2 (batch 2, still to draw)**, create the 4 pose images listed in section B, using the ninja's **reference image** as the identity source (same face, hair, outfit, colors, accessories, art style). Prefer your image tool's *edit / reference image* mode: give it the reference PNG and ask for the new pose.
 > 2. Every pose image: **PNG 1024×1536 (portrait), real transparent background (alpha), full body, no text, no effects, no shadow on the ground, no other characters.**
 > 3. **Framing is strict** (the game aligns poses by these rules, see section A):
 >    - The character **faces and attacks toward the RIGHT** side of the image.
@@ -55,12 +55,47 @@ Thêm vào cuối mỗi prompt:
 
 Ảnh gốc độ phân giải cao hơn nằm trong thư mục `Character/` nếu cần tham chiếu chi tiết.
 
+## C2. Đợt 2: 16 ninja còn lại
+
+Cùng quy tắc khung hình (mục A) và 4 tư thế (mục B) như đợt thử. Ảnh tham chiếu nằm trong `game/public/heroes/`. Ghi chú bên dưới bám theo kỹ năng của từng ninja trong game, và liệt kê các chi tiết nhận diện **bắt buộc giữ nguyên**.
+
+**Lưu ý chung:**
+- Không vẽ hiệu ứng như sét, lửa, nước, côn trùng hay quạ, vì game tự thêm hiệu ứng spritesheet. Chỉ vẽ tay và tư thế đúng chỗ phát chiêu.
+- Ảnh tham chiếu nào có sẵn hiệu ứng (ví dụ Kakashi có tia sét) thì bỏ hiệu ứng đi, chỉ lấy nhân vật.
+- Vũ khí và vật mang theo (kiếm, quạt, cuộn giấy, chó Akamaru) phải nằm trọn trong khung, không bị cắt.
+
+### Akatsuki và Hokage (5★ / 4★)
+
+| hero_id | Ninja | Ảnh tham chiếu | Ghi chú tư thế | Giữ nguyên |
+|---|---|---|---|---|
+| `itachi` | Itachi | `Itachi.webp` | **attack:** tay phải ném phi tiêu về phía phải. **cast:** chắp ấn hoả độn trước miệng. **dash:** áo choàng tung về sau. | Áo choàng đen mây đỏ Akatsuki, mắt Sharingan đỏ, nếp nhăn dưới mắt, băng trán gạch ngang, nhẫn |
+| `kakashi` | Kakashi | `Kakashi.webp` | **attack:** đâm tay phải về trước như Lôi Thiết (bàn tay mở, không vẽ sét). **cast:** tay trái kéo băng trán lộ mắt Sharingan, tay phải kết ấn. | Tóc bạc dựng, khẩu trang che nửa mặt, áo giáp jounin xanh lá, băng trán lệch che mắt trái |
+| `minato` | Minato | `Minato.webp` | **dash:** lướt rất thấp, gần như song song mặt đất. **attack:** chém kunai ba mũi bằng tay phải. **cast:** ném kunai ba mũi về phía phải. | Áo choàng trắng viền ngọn lửa đỏ, tóc vàng nhọn, kunai ba mũi |
+| `tsunade` | Tsunade | `Tsunade.webp` | **attack:** đấm thẳng nắm tay phải, chân trước đạp mạnh. **cast:** hai bàn tay úp về trước như truyền y thuật. **hit:** vẫn đứng vững, chỉ ngả nhẹ. | Áo khoác xanh lá chữ "đánh bạc" sau lưng, tóc vàng buộc hai đuôi thấp, dấu kim cương trên trán |
+| `kisame` | Kisame | `Kisame.webp` | **attack:** vung kiếm Samehada quấn băng chém ngang về phải. **cast:** kiếm cắm xuống đất, tay kết ấn thuỷ độn. **dash:** kiếm vác trên vai. | Da xanh, mang cá trên má, răng nhọn, áo Akatsuki, kiếm Samehada quấn băng |
+| `hinata` | Hinata | `Hinata.webp` | **attack:** đẩy lòng bàn tay phải về trước (Nhu Quyền), tay trái thu sau hông. **cast:** thế Bát Quái, hai tay dang ngang lòng bàn tay mở, chân trụ thấp. | Mắt Byakugan trắng, áo khoác tím nhạt và trắng, tóc đen dài |
+| `madara` | Madara | `Madara.webp` | **attack:** vung quạt Gunbai to bằng tay phải. **cast:** một tay giơ thẳng lên trời gọi thiên thạch, tay kia chống hông. **hit:** tóc dài tung về trước. | Giáp đỏ samurai, tóc đen rất dài bù xù, quạt Gunbai |
+| `pain` | Pain | `Pain.webp` | **attack:** một tay đưa thẳng ra trước, lòng bàn tay mở (Thần La Thiên Chinh). **cast:** hai tay dang ngang, đứng thẳng uy nghiêm. **dash:** bước đi bình thản, không chạy. | Tóc cam dựng, khuyên đen trên mặt, mắt Rinnegan tím hoa văn vòng, áo Akatsuki |
+
+### Thế hệ trẻ (3★)
+
+| hero_id | Ninja | Ảnh tham chiếu | Ghi chú tư thế | Giữ nguyên |
+|---|---|---|---|---|
+| `tenten` | Tenten | `Tenten.webp` | **attack:** ném ba kunai cùng lúc về phải. **cast:** mở cuộn giấy lớn triệu hồi vũ khí, cuộn giấy uốn quanh người. | Hai búi tóc, áo trắng cổ Trung Hoa, quần đỏ nâu, cuộn giấy lớn |
+| `kiba` | Kiba | `Kiba.webp` | **attack:** cào móng tay về trước, khom người như sói. **cast:** khom thấp gần bốn chân, chuẩn bị xoay Nha Thông Nha. **dash:** chạy khom người như thú. | Vết đỏ hình răng nanh trên má, áo khoác xám có lông. Chó trắng Akamaru đi cùng, nằm trong khung |
+| `shino` | Shino | `Shino.webp` | **attack:** một tay đưa ra trước, ngón tay xoè (gọi côn trùng, không vẽ côn trùng). **cast:** hai tay đưa ra trước, đứng thẳng. **hit:** gần như không biểu cảm. | Áo khoác cao cổ che nửa mặt, kính đen tròn, mũ trùm |
+| `choji` | Choji | `Choji.webp` | **attack:** đấm nắm tay phải phình to (chỉ phóng to cánh tay, người giữ nguyên cỡ). **cast:** chắp ấn Bội Hoá, chân dạng rộng. **dash:** lăn người (cuộn tròn nghiêng). | Tóc nâu dựng, vòng xoáy đỏ trên má, giáp đỏ, khăn trắng |
+| `shikamaru` | Shikamaru | `Shikamaru.webp` | **cast:** chắp ấn hình chuột ngang ngực (Ảnh Mô Phỏng). **attack:** ném kunai về phải. **dash:** chạy hai tay sau lưng kiểu ninja. | Tóc buộc đuôi nhọn trên đỉnh đầu, áo giáp chunin xanh lá, vẻ mặt uể oải |
+| `lee` | Rock Lee | `Lee.webp` | **attack:** đá xoay ngang bằng chân phải (Mộc Diệp Toàn Phong), chân cao ngang đầu. **cast:** thế võ, một tay sau lưng một tay đưa trước lòng bàn tay ngửa. **dash:** chạy rất nhanh, người đổ về trước. | Tóc bát úp đen bóng, lông mày rậm, đồ bó xanh lá, áo giáp chunin, băng tay cam |
+| `ino` | Ino | `Ino.webp` | **attack:** ném phi tiêu về phải. **cast:** hai tay tạo hình khung tròn hướng về phải (Tâm Chuyển Thân Thuật). | Tóc vàng dài buộc đuôi, mái che một mắt, áo tím |
+| `temari` | Temari | `Temari.webp` | **attack:** vung quạt lớn đã mở chém ngang về phải. **cast:** dựng quạt mở to phía sau người. **dash:** quạt gập vác trên vai. | Bốn búi tóc vàng, quạt sắt lớn ba vòng tròn tím, áo tím đen |
+
 ## D. Bảng kiểm tra trước khi commit
 
 > Kết quả đợt thử (4 ninja): nhân vật giữ đúng nhận diện ở mọi tư thế. Khung hình ban đầu lệch (to kín khung, chân từ 87% đến 99%); `tools/normalize_poses.py` đã tự căn lại, không cần vẽ lại.
 
 
-- [ ] 16 file trong `art/poses/<hero_id>/{dash,attack,cast,hit}.png`.
+- [ ] Mỗi ninja đủ 4 file `art/poses/<hero_id>/{dash,attack,cast,hit}.png` (đợt 2: 64 file cho 16 ninja).
 - [ ] Mỗi file 1024×1536, nền trong suốt thật, nhân vật quay sang phải.
 - [ ] Chân chạm vạch 96% và trọng tâm ở giữa ảnh.
 - [ ] Cùng tỉ lệ với nhau: đặt 4 ảnh chồng lên nhau thì kích thước đầu gần bằng nhau.
