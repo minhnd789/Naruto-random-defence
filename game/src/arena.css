@@ -1063,6 +1063,85 @@
 .bag-btn {
   font-size: 13px;
 }
+/* Bách khoa trang bị */
+.gear-codex {
+  width: min(1040px, 100%);
+}
+.gc-list {
+  max-height: 64vh;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+.gc-list .gb-grid {
+  grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+  max-height: none;
+  overflow: visible;
+}
+.gc-group + .gc-group {
+  margin-top: 10px;
+}
+.gc-group-title {
+  display: block;
+  margin: 4px 4px 6px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: #e9c98a;
+  text-transform: uppercase;
+}
+.gc-cell {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  text-align: center;
+}
+.gc-cell > span {
+  font-size: 11px;
+  line-height: 1.2;
+  color: #d9cfe0;
+}
+.gc-count {
+  position: absolute;
+  top: -4px;
+  right: 6px;
+  font-size: 11px;
+  padding: 0 5px;
+  border-radius: 8px;
+  background: #3a8f4f;
+  color: #fff;
+}
+.gear-icon.unowned .gi-img,
+.gear-icon.unowned .gi-k {
+  filter: grayscale(0.9) brightness(0.62);
+  opacity: 0.85;
+}
+.gc-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 14px 10px 10px;
+  border-radius: 12px;
+  background: radial-gradient(circle at 50% 30%, color-mix(in srgb, var(--rc) 22%, transparent), transparent 70%);
+}
+.gc-hero .gear-icon {
+  cursor: default;
+}
+.gc-name {
+  margin: 0;
+  font-size: 18px;
+  color: var(--rc);
+}
+.gc-name.r5 {
+  background: linear-gradient(90deg, #ff4a4a, #ffb43a, #ffe03a, #4cc46a, #3d8bff, #c84aff);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.gc-main {
+  font-size: 13px;
+}
 .gear-drops {
   justify-content: center;
 }

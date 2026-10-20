@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Profile } from '../api';
 import { HEROES, heroById } from '../engine/heroes';
 import { power } from '../engine/progression';
-import { GearBag, HeroGearPanel } from './Gear';
+import { GearBag, GearCodex, HeroGearPanel } from './Gear';
 import { HeroUpgrade } from './HeroUpgrade';
 import { ItemIcon } from './Items';
 import { HeroCard, HeroDetail, progOf } from './TeamSelect';
@@ -11,6 +11,7 @@ export function Collection({ profile, setProfile, onBack, topBar }: { profile: P
   const [filter, setFilter] = useState<0 | 3 | 4 | 5>(0);
   const [sel, setSel] = useState(profile.heroes[0]?.heroId ?? HEROES[0].id);
   const [bag, setBag] = useState(false);
+  const [codex, setCodex] = useState(false);
   const owned = new Map(profile.heroes.map((h) => [h.heroId, h]));
   const list = HEROES.filter((h) => !filter || h.rarity === filter).sort(
     (a, b) =>
@@ -31,6 +32,9 @@ export function Collection({ profile, setProfile, onBack, topBar }: { profile: P
         </h2>
         <button className="btn-mini bag-btn" onClick={() => setBag(true)}>
           🎒 Túi đồ ({profile.gear?.length ?? 0})
+        </button>
+        <button className="btn-mini bag-btn" onClick={() => setCodex(true)}>
+          📖 Bách khoa trang bị
         </button>
         <div className="inv-strip">
           {Object.entries(profile.inventory)
@@ -67,6 +71,7 @@ export function Collection({ profile, setProfile, onBack, topBar }: { profile: P
           {!o && <p className="hint">Nhận ninja này qua Triệu Hồi.</p>}
         </section>
       </main>
+      {codex && <GearCodex profile={profile} onClose={() => setCodex(false)} />}
       {bag && <GearBag profile={profile} setProfile={setProfile} onClose={() => setBag(false)} />}
     </div>
   );

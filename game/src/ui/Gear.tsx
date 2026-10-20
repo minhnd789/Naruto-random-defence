@@ -1,6 +1,20 @@
 import { CSSProperties, useEffect, useMemo, useState } from 'react';
 import { api, Profile } from '../api';
-import { GEAR_SLOTS, GearItem, GearSlot, RARITIES, SALVAGE_COINS, SLOT_INFO, formatStat, gearName, gearScore, gearVariant } from '../engine/gear';
+import {
+  GEAR_SLOTS,
+  GEAR_VARIANTS,
+  GearItem,
+  GearSlot,
+  GearVariant,
+  RARITIES,
+  SALVAGE_COINS,
+  SLOT_INFO,
+  STAT_INFO,
+  formatStat,
+  gearName,
+  gearScore,
+  gearVariant,
+} from '../engine/gear';
 import { heroById } from '../engine/heroes';
 import { Portrait } from './Portrait';
 
@@ -246,6 +260,125 @@ export function GearBag({ profile, setProfile, onClose }: { profile: Profile; se
               Phân giải {picked.size} món → {coins.toLocaleString('vi-VN')} Xu
             </button>
             {msg && <div className="form-ok">{msg}</div>}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** Ô hình một mẫu đồ (không gắn với món cụ thể): dùng trong Bách khoa. */
+function VariantIcon({ v, size, owned, selected, onClick }: { v: GearVariant; size: number; owned: boolean; selected?: boolean; onClick?: () => void }) {
+  const art = useGearArt();
+  const top = v.rarity[1];
+  return (
+    <button
+      className={`gear-icon r${top} ${selected ? 'sel' : ''} ${owned ? '' : 'unowned'}`}
+      style={{ width: size, height: size, '--rc': rarityCss(top) } as CSSProperties}
+      onClick={onClick}
+      title={v.name}
+    >
+      {art?.has(v.id) ? (
+        <img className="gi-img" src={`/gear/${v.id}.webp`} alt="" draggable={false} />
+      ) : (
+        <span className="gi-k" style={{ fontSize: size * 0.42 }}>
+          {SLOT_INFO[v.slot].icon}
+        </span>
+      )}
+    </button>
+  );
+}
+
+const rarityRange = (v: GearVariant) =>
+  v.rarity[0] === v.rarity[1] ? RARITIES[v.rarity[0]].name : `${RARITIES[v.rarity[0]].name} → ${RARITIES[v.rarity[1]].name}`;
+
+/** Bách khoa trang bị: mọi mẫu đồ trong game, mẫu nào đã sở hữu, mô tả và chỉ số chính. */
+export function GearCodex({ profile, onClose }: { profile: Profile; onClose: () => void }) {
+  const gear = profile.gear ?? [];
+  const [slot, setSlot] = useState<GearSlot | 'all'>('artifact');
+  const [sel, setSel] = useState<GearVariant>(() => GEAR_VARIANTS.find((v) => v.slot === 'artifact')!);
+  const [item, setItem] = useState<GearItem | null>(null);
+  const ownedBy = useMemo(() => {
+    const m = new Map<string, GearItem[]>();
+    for (const g of gear) m.set(g.variant, [...(m.get(g.variant) ?? []), g]);
+    return m;
+  }, [gear]);
+  const shown = GEAR_VARIANTS.filter((v) => slot === 'all' || v.slot === slot);
+  const found = GEAR_VARIANTS.filter((v) => ownedBy.has(v.id)).length;
+  const copies = (ownedBy.get(sel.id) ?? []).sort((a, b) => b.rarity - a.rarity || b.ilvl - a.ilvl);
+  const main = sel.main ?? SLOT_INFO[sel.slot].main;
+  const pick = (v: GearVariant) => {
+    setSel(v);
+    setItem(null);
+  };
+  // Nhóm pháp khí theo bậc cho dễ nhìn
+  const groups: [string, GearVariant[]][] =
+    slot === 'artifact'
+      ? [
+          ['Dụng cụ nhẫn giả', shown.filter((v) => v.rarity[1] <= 3)],
+          ['Vũ khí huyền thoại', shown.filter((v) => v.rarity[1] > 3 && v.rarity[0] < 4)],
+          ['Bảo bối Lục Đạo', shown.filter((v) => v.rarity[0] >= 4)],
+        ]
+      : [['', shown]];
+  return (
+    <div className="modal-back" onClick={onClose}>
+      <div className="modal gear-bag gear-codex" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-head">
+          <h3>
+            Bách khoa trang bị · đã có {found}/{GEAR_VARIANTS.length} mẫu
+          </h3>
+          <button className="inspect-x" onClick={onClose}>
+            ✕
+          </button>
+        </div>
+        <div className="chips">
+          <button className={`chip ${slot === 'all' ? 'on' : ''}`} onClick={() => setSlot('all')}>
+            Tất cả
+          </button>
+          {GEAR_SLOTS.map((s) => (
+            <button key={s} className={`chip ${slot === s ? 'on' : ''}`} onClick={() => setSlot(s)}>
+              {SLOT_INFO[s].icon} {SLOT_INFO[s].name}
+            </button>
+          ))}
+        </div>
+        <div className="gb-body">
+          <div className="gc-list">
+            {groups.map(([title, list]) => (
+              <div key={title} className="gc-group">
+                {title && <small className="gc-group-title">{title}</small>}
+                <div className="gb-grid">
+                  {list.map((v) => (
+                    <div key={v.id} className="gc-cell">
+                      <VariantIcon v={v} size={64} owned={ownedBy.has(v.id)} selected={sel.id === v.id} onClick={() => pick(v)} />
+                      <span>{v.name}</span>
+                      {ownedBy.has(v.id) && <b className="gc-count">×{ownedBy.get(v.id)!.length}</b>}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="gb-side gc-side">
+            <div className="gc-hero" style={{ '--rc': rarityCss(sel.rarity[1]) } as CSSProperties}>
+              <VariantIcon v={sel} size={132} owned />
+              <h4 className={`gc-name r${sel.rarity[1]}`}>{sel.name}</h4>
+              <span className="muted small">
+                {SLOT_INFO[sel.slot].name} · {rarityRange(sel)}
+              </span>
+            </div>
+            <div className="gc-main">
+              Chỉ số chính: <b>{main.map((s) => `${STAT_INFO[s].name}${STAT_INFO[s].pct ? ' %' : ''}`).join(' + ')}</b>
+            </div>
+            {sel.desc && <p className="gd-desc">{sel.desc}</p>}
+            <small className="muted">{copies.length ? `Đang có ${copies.length} món` : 'Chưa sở hữu. Vượt ải và bí cảnh để tìm.'}</small>
+            {copies.length > 0 && (
+              <div className="gp-list">
+                {copies.map((g) => (
+                  <GearIcon key={g.id} item={g} size={48} selected={item?.id === g.id} onClick={() => setItem(g)} />
+                ))}
+              </div>
+            )}
+            {item && <GearDetail item={item} />}
           </div>
         </div>
       </div>
