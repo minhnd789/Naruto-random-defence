@@ -3,13 +3,12 @@ import { api, currentToken, Profile, RtaMe } from '../api';
 import { RemoteDriver } from '../battle/BattleController';
 import { Choice } from '../engine/ai';
 import { ELEMENT_INFO, HEROES, heroById } from '../engine/heroes';
-import { UnitSetup, buildTeam, power } from '../engine/progression';
+import { UnitSetup, buildTeam } from '../engine/progression';
 import { PICK_ORDER, RTA_MIN_HEROES } from '../engine/ranking';
 import { TeamId } from '../engine/types';
 import { BattleView } from './BattleView';
 import { Portrait } from './Portrait';
 import { Leaderboard, TierBadge, useCountdown } from './Ranking';
-import { progOf } from './TeamSelect';
 
 interface MatchInfo {
   matchId: string;
@@ -263,14 +262,14 @@ export function Rta({ profile, onBack, topBar }: { profile: Profile; onBack: () 
           </section>
           <section className="panel">
             <h2>Ninja của bạn</h2>
-            <p className="hint">RTA dùng cấp, sao và thức tỉnh hiện tại của ninja.</p>
+            <p className="hint">Trong RTA mọi ninja tự lên tối đa (Lv60 · 6★ · thức tỉnh 3); chỉ trang bị là của riêng bạn.</p>
             <div className="def-grid">
               {[...profile.heroes]
-                .sort((a, b) => power(heroById(b.heroId), b) - power(heroById(a.heroId), a))
+                .sort((a, b) => heroById(b.heroId).rarity - heroById(a.heroId).rarity)
                 .map((h) => (
                   <div key={h.heroId} className="def-pick">
                     <Portrait hero={heroById(h.heroId)} size={52} />
-                    <small>Lv{h.level}</small>
+                    <small>Lv60</small>
                   </div>
                 ))}
             </div>
@@ -430,7 +429,6 @@ function DraftView({
           {grid.map((id) => {
             const h = heroById(id);
             const el = ELEMENT_INFO[h.element];
-            const prog = progOf(profile.heroes, id);
             const isBanned = banned.has(id);
             const taken = draft.picks[my].includes(id);
             return (
@@ -445,7 +443,7 @@ function DraftView({
                 <Portrait hero={h} size={64} />
                 <span className="dg-el">{el.icon}</span>
                 <b>{h.name}</b>
-                {owned.has(id) && draft.phase !== 'postban' && <small>Lv{prog.level} · {'★'.repeat(prog.stars)}</small>}
+                {owned.has(id) && draft.phase !== 'postban' && <small>Lv60 · ★6</small>}
                 {isBanned && <em className="ban-x">CẤM</em>}
               </button>
             );

@@ -5,7 +5,7 @@ import type { WebSocket } from 'ws';
 import { chooseAction } from '../../game/src/engine/ai';
 import { Battle } from '../../game/src/engine/battle';
 import { HEROES, heroById } from '../../game/src/engine/heroes';
-import { HeroProgress, UnitSetup, buildTeam, power } from '../../game/src/engine/progression';
+import { HeroProgress, MAX_AWAKEN, MAX_STARS, UnitSetup, buildTeam, maxLevel, power } from '../../game/src/engine/progression';
 import {
   DRAFT_TIMEOUT_MS,
   PICK_ORDER,
@@ -15,7 +15,6 @@ import {
   eloDelta,
   seasonOf,
 } from '../../game/src/engine/ranking';
-import { enemySetup } from '../../game/src/engine/stages';
 import { TeamId } from '../../game/src/engine/types';
 import { ensureRta, frontlineFirst } from './arena';
 import { verifyToken } from './auth';
@@ -303,6 +302,9 @@ class Match {
   }
 }
 
+/** Mức phát triển mọi ninja trong RTA. */
+const RTA_MAX = { level: maxLevel(MAX_STARS), stars: MAX_STARS, awaken: MAX_AWAKEN };
+
 export class RtaManager {
   queue: { userId: number; rating: number; since: number; seat: Seat }[] = [];
   matches = new Map<string, Match>();
@@ -343,24 +345,20 @@ export class RtaManager {
       userId,
       name: u.display_name,
       rating,
-      roster: new Map(heroes.map((h) => [h.hero_id, { level: h.level, stars: h.stars, awaken: h.awaken, gear: gear.get(h.hero_id) }])),
+      // RTA đấu công bằng: ninja nào cũng tự lên tối đa (cấp, sao, thức tỉnh); chỉ trang bị là của riêng người chơi
+      roster: new Map(heroes.map((h) => [h.hero_id, { ...RTA_MAX, gear: gear.get(h.hero_id) }])),
       socket,
     };
   }
 
-  /** Bot luyện tập: dùng toàn bộ ninja với cấp xấp xỉ người chơi. */
+  /** Bot luyện tập: dùng toàn bộ ninja, cũng ở mức tối đa như người chơi (không có trang bị). */
   private botSeat(side: Side, like: Seat): Seat {
-    const levels = [...like.roster.values()].map((p) => p.level).sort((a, b) => b - a).slice(0, 5);
-    const lv = Math.max(1, Math.round(levels.reduce((s, x) => s + x, 0) / Math.max(1, levels.length)));
     return {
       side,
       userId: null,
       name: 'Bot Huấn Luyện',
       rating: like.rating,
-      roster: new Map(HEROES.map((h) => {
-        const s = enemySetup(h.id, lv);
-        return [h.id, { level: s.level, stars: s.stars, awaken: s.awaken }];
-      })),
+      roster: new Map(HEROES.map((h) => [h.id, { ...RTA_MAX }])),
       socket: null,
     };
   }

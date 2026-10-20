@@ -111,7 +111,60 @@ export function Lobby({ profile, setProfile, go, topBar }: { profile: Profile; s
             </button>
           </div>
         </nav>
+
+        {/* Mobile: nút tròn hai bên + thanh tab dưới cùng (ẩn trên màn hình rộng) */}
+        <div className="lm-side left">
+          <button className={`lm-btn daily ${profile.user.dailyAvailable ? 'ready' : ''}`} onClick={claim} disabled={!profile.user.dailyAvailable}>
+            <span className="lm-ic">賞</span>
+            <small>Quà ngày</small>
+            {profile.user.dailyAvailable && <span className="dot" />}
+          </button>
+          <button className="lm-btn practice" onClick={() => go('team')}>
+            <span className="lm-ic">練</span>
+            <small>Luyện tập</small>
+          </button>
+        </div>
+        <div className="lm-side right">
+          <button className="lm-btn summon" onClick={() => go('gacha')}>
+            <span className="lm-ic">
+              <img src={heroUrl('Madara.webp')} alt="" draggable={false} />
+            </span>
+            <small>Triệu Hồi</small>
+            <em>{profile.pity.premium?.pity ?? 0}/120</em>
+          </button>
+        </div>
+        <button className="lm-next" onClick={() => go('campaign')}>
+          {nextStage ? (
+            <>
+              Tiếp theo <b>{nextStage.id}</b> · {nextStage.name}
+            </>
+          ) : (
+            'Đã chinh phục mọi ải!'
+          )}
+        </button>
       </div>
+      <nav className="lm-dock">
+        <button className="lm-tab ninja" onClick={() => go('collection')}>
+          <span className="lm-ic">忍</span>
+          <small>Ninja</small>
+        </button>
+        <button className="lm-tab dungeon" onClick={() => go('dungeons')}>
+          <span className="lm-ic">印</span>
+          <small>Bí Cảnh</small>
+        </button>
+        <button className="lm-tab fight" onClick={() => go('campaign')}>
+          <span className="lm-ic">戦</span>
+          <small>Vượt Ải</small>
+        </button>
+        <button className="lm-tab arena" onClick={() => go('arena')}>
+          <span className="lm-ic">闘</span>
+          <small>Đấu Trường</small>
+        </button>
+        <button className="lm-tab rta" onClick={() => go('rta')}>
+          <span className="lm-ic">刃</span>
+          <small>RTA</small>
+        </button>
+      </nav>
       {toast && <div className="toast">{toast}</div>}
     </div>
   );

@@ -1074,3 +1074,271 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* ================= Sảnh trên điện thoại ================= */
+.lm-side,
+.lm-dock,
+.lm-next {
+  display: none;
+}
+@media (max-width: 720px) {
+  .lobby {
+    padding: 10px 10px 0;
+    overflow: hidden;
+  }
+  .lobby .topbar {
+    gap: 6px;
+    margin-bottom: 4px;
+  }
+  .lobby-body {
+    position: relative;
+    display: block;
+  }
+  .lobby-menu {
+    display: none;
+  }
+  .lobby-hero {
+    position: absolute;
+    inset: 0 0 34px;
+    height: auto;
+  }
+  .lobby-hero-name {
+    left: 2px;
+    bottom: 4px;
+  }
+  .lobby-hero-name b {
+    font-size: 30px;
+  }
+  .lobby-hero-name span {
+    font-size: 12px;
+  }
+
+  .lm-side {
+    position: absolute;
+    top: 8px;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .lm-side.left {
+    left: 0;
+  }
+  .lm-side.right {
+    right: 0;
+  }
+  .lm-btn {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    width: 58px;
+    padding: 0;
+    background: none;
+    border: 0;
+    color: #fff;
+    cursor: pointer;
+  }
+  .lm-btn small {
+    font-size: 10px;
+    font-weight: 800;
+    text-shadow: 0 1px 3px #000, 0 0 6px #000;
+    white-space: nowrap;
+  }
+  .lm-btn em {
+    font-style: normal;
+    font-size: 9px;
+    font-weight: 800;
+    margin-top: -2px;
+    padding: 0 5px;
+    border-radius: 6px;
+    background: rgba(0, 0, 0, 0.6);
+    color: #d6c2ff;
+  }
+  .lm-btn .lm-ic {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    font-size: 20px;
+    border: 2px solid rgba(255, 255, 255, 0.35);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.55);
+  }
+  .lm-btn:disabled {
+    cursor: default;
+  }
+  .lm-btn:disabled .lm-ic {
+    filter: grayscale(0.7) brightness(0.7);
+  }
+  .lm-btn .dot {
+    position: absolute;
+    top: 0;
+    right: 8px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #ff3b4a;
+    box-shadow: 0 0 8px #ff3b4a;
+  }
+  .lm-btn.daily.ready .lm-ic {
+    animation: lmPulse 1.6s ease-in-out infinite;
+  }
+  @keyframes lmPulse {
+    50% {
+      box-shadow: 0 0 0 4px rgba(255, 207, 90, 0.35), 0 3px 10px rgba(0, 0, 0, 0.55);
+    }
+  }
+  .lm-btn.summon .lm-ic {
+    overflow: hidden;
+    border-color: #c9a6ff;
+    background: radial-gradient(circle at 50% 30%, #7a4ad8, #24104a);
+  }
+  .lm-btn.summon .lm-ic img {
+    width: 150%;
+    margin-top: 30%;
+    object-fit: cover;
+  }
+
+  .lm-ic {
+    display: grid;
+    place-items: center;
+    font-weight: 900;
+    color: #fff;
+    background: linear-gradient(135deg, #ff7a2a, #b0142a);
+  }
+  .daily .lm-ic {
+    background: linear-gradient(135deg, #ffd65a, #c47a1c);
+  }
+  .practice .lm-ic {
+    background: linear-gradient(135deg, #5ac8ff, #1d4f9a);
+  }
+  .rta .lm-ic {
+    background: linear-gradient(135deg, #b98cff, #2a1a6a);
+  }
+  .ninja .lm-ic {
+    background: linear-gradient(135deg, #5fe39a, #1d7a4a);
+  }
+  .dungeon .lm-ic {
+    background: linear-gradient(135deg, #ffb86a, #8a4a12);
+  }
+  .arena .lm-ic {
+    background: linear-gradient(135deg, #ff6a4a, #8a1a2a);
+  }
+  .summon .lm-ic {
+    background: linear-gradient(135deg, #b98cff, #4a2bd0);
+  }
+
+  .lm-next {
+    position: absolute;
+    left: 50%;
+    bottom: 2px;
+    z-index: 2;
+    display: block;
+    max-width: 100%;
+    transform: translateX(-50%);
+    padding: 5px 12px;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 207, 90, 0.45);
+    background: rgba(10, 6, 14, 0.75);
+    color: #e9dcc8;
+    font-size: 11px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    cursor: pointer;
+  }
+  .lm-next b {
+    color: var(--gold);
+  }
+  .lobby-hero-name {
+    bottom: 40px;
+  }
+
+  .lm-dock {
+    flex: none;
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    align-items: end;
+    margin: 6px -10px 0;
+    padding: 6px 4px calc(6px + env(safe-area-inset-bottom));
+    background: linear-gradient(180deg, rgba(30, 18, 36, 0.96), rgba(12, 7, 16, 0.98));
+    border-top: 1px solid rgba(255, 207, 90, 0.25);
+    box-shadow: 0 -6px 18px rgba(0, 0, 0, 0.5);
+  }
+  .lm-tab {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    padding: 0;
+    background: none;
+    border: 0;
+    color: #cfc3d6;
+    cursor: pointer;
+  }
+  .lm-tab .lm-ic {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    font-size: 18px;
+  }
+  .lm-tab small {
+    font-size: 10px;
+    font-weight: 800;
+    white-space: nowrap;
+  }
+  /* Nút Vượt Ải nổi lên giữa thanh tab */
+  .lm-tab.fight {
+    margin-top: -22px;
+    color: #fff;
+  }
+  .lm-tab.fight .lm-ic {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    font-size: 26px;
+    border: 3px solid #ffcf5a;
+    box-shadow: 0 0 16px rgba(255, 140, 60, 0.6), 0 4px 10px rgba(0, 0, 0, 0.6);
+  }
+  .lm-tab:active .lm-ic,
+  .lm-btn:active:not(:disabled) .lm-ic {
+    transform: scale(0.92);
+  }
+
+  /* Thanh tài nguyên gọn: một hàng, chữ nhỏ */
+  .topbar .tb-user b {
+    font-size: 14px;
+  }
+  .topbar .tb-user small {
+    font-size: 11px;
+  }
+  .topbar .logo-k.small {
+    width: 32px;
+    height: 32px;
+    font-size: 18px;
+    border-radius: 8px;
+  }
+  .tb-wallet {
+    width: 100%;
+    flex-wrap: nowrap;
+    gap: 4px;
+  }
+  .tb-wallet .cur {
+    flex: 1 1 auto;
+    min-width: 0;
+    gap: 4px;
+    padding: 2px 6px 2px 2px;
+    font-size: 11px;
+  }
+  .tb-wallet .cur i {
+    width: 18px;
+    height: 18px;
+    font-size: 10px;
+    flex: none;
+  }
+  .tb-wallet .btn-mini {
+    flex: none;
+    padding: 3px 7px;
+    font-size: 10px;
+  }
+}

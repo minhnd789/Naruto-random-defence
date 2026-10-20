@@ -110,7 +110,7 @@ Kết nối WebSocket qua `/api/rta/ws?token=…`. Thứ tự một trận:
    - Kết nối lại sẽ được gửi lại toàn bộ diễn biến trận.
 6. **Kết quả:** Elo cập nhật cho cả hai người. Mọi trận được lưu vào bảng `rta_matches` (seed, lượt cấm/chọn, đội hình) để xem lại sau.
 
-Cần sở hữu ít nhất 6 ninja mới vào được RTA.
+Cần sở hữu ít nhất 6 ninja mới vào được RTA. Để đấu công bằng, trong RTA mọi ninja tự ở mức tối đa (cấp 60, 6 sao, thức tỉnh 3); chỉ trang bị là của riêng người chơi. Bot luyện tập cũng ở mức tối đa, không có trang bị.
 
 ## Ảnh nền và hiệu ứng kỹ năng
 

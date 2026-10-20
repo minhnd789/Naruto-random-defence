@@ -203,6 +203,8 @@ test('RTA với bot: cấm/chọn và đánh tay, client phát lại khớp serv
   const start = await c.wait((m) => m.t === 'start', 30000);
   assert.equal(start.teamA.length, 4);
   assert.equal(start.teamB.length, 4);
+  // RTA đấu công bằng: mọi ninja ở mức tối đa
+  for (const u of [...start.teamA, ...start.teamB]) assert.deepEqual([u.level, u.stars, u.awaken], [60, 6, 3]);
   assert.ok(!start.teamA.some((u: any) => u.heroId === 'pain'));
 
   // Đánh tay: mỗi khi tới lượt A thì gửi lựa chọn của AI phía client
