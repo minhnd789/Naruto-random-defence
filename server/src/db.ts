@@ -176,6 +176,20 @@ const MIGRATIONS: string[] = [
      data JSONB NOT NULL,
      created_at TIMESTAMPTZ NOT NULL DEFAULT now()
    )`,
+  // Trang bị
+  `CREATE TABLE gear (
+     id BIGSERIAL PRIMARY KEY,
+     user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+     slot TEXT NOT NULL,
+     rarity INT NOT NULL,
+     ilvl INT NOT NULL,
+     main JSONB NOT NULL,
+     subs JSONB NOT NULL,
+     hero_id TEXT,
+     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+   );
+   CREATE INDEX gear_user ON gear (user_id, hero_id);
+   CREATE UNIQUE INDEX gear_one_per_slot ON gear (user_id, hero_id, slot) WHERE hero_id IS NOT NULL`,
 ];
 
 export async function migrate(db: Db) {

@@ -21,6 +21,7 @@ import {
 import { Rng } from '../../game/src/engine/rng';
 import { enemySetup, Reward } from '../../game/src/engine/stages';
 import { Db, Queryable } from './db';
+import { gearBonusByHero } from './gear';
 import { HttpError, parse } from './http';
 import { profile, regen } from './profile';
 
@@ -76,10 +77,11 @@ export async function defenseOf(q: Queryable, userId: number): Promise<UnitSetup
   let ids = json<string[]>(u.defense);
   if (ids.length !== 5) ids = json<string[]>(u.team);
   const rows = (await q.query('SELECT hero_id, level, stars, awaken FROM user_heroes WHERE user_id = $1 AND hero_id = ANY($2::text[])', [userId, ids])).rows;
+  const gear = await gearBonusByHero(q, userId, ids);
   return ids
     .map((id) => rows.find((r) => r.hero_id === id))
     .filter(Boolean)
-    .map((r) => ({ heroId: r.hero_id, level: r.level, stars: r.stars, awaken: r.awaken }));
+    .map((r) => ({ heroId: r.hero_id, level: r.level, stars: r.stars, awaken: r.awaken, gear: gear.get(r.hero_id) }));
 }
 
 const teamPower = (t: UnitSetup[]) => t.reduce((s, u) => s + power(heroById(u.heroId), u), 0);

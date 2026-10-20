@@ -1,4 +1,5 @@
 // Công thức nâng cấp ninja: dùng chung cho client (hiển thị) và server (tính thật)
+import { GearBonus, applyGear } from './gear';
 import { ELEMENT_INFO, heroById } from './heroes';
 import { Element, HeroDef, Stats } from './types';
 
@@ -6,6 +7,8 @@ export interface HeroProgress {
   level: number;
   stars: number;
   awaken: number; // 0..MAX_AWAKEN
+  /** Tổng chỉ số từ trang bị đang mặc (server chụp lại lúc vào trận). */
+  gear?: GearBonus;
 }
 export interface UnitSetup extends HeroProgress {
   heroId: string;
@@ -75,14 +78,14 @@ export function computeStats(hero: HeroDef, p: HeroProgress): Stats {
   const aw = 1 + 0.06 * p.awaken;
   // Phòng thủ tăng chậm theo cấp để thời gian hạ gục không bị kéo dài ở cấp cao
   const defLv = 1 + (p.level - 1) * 0.005;
-  return {
+  return applyGear({
     ...b,
     hp: Math.round(b.hp * lv * st * aw),
     atk: Math.round(b.atk * lv * st * aw),
     def: Math.round(b.def * defLv * st * aw),
     spd: b.spd + (p.stars - hero.rarity) + 2 * p.awaken,
     crit: Math.min(1, b.crit + (p.awaken >= 3 ? 0.05 : 0)),
-  };
+  }, p.gear);
 }
 
 export function withProgress(hero: HeroDef, p: HeroProgress): HeroDef {

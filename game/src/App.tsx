@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { api, ApiError, BattleTarget, getToken, Profile, setToken } from './api';
 import type { BattleTheme } from './battle/BattleScene';
+import { GearItem, gearBonus } from './engine/gear';
 import { buildTeam, UnitSetup } from './engine/progression';
 import { enemySetup, stageById } from './engine/stages';
 import { HeroDef } from './engine/types';
@@ -42,7 +43,32 @@ function themeOf(target: BattleTarget | null | undefined): BattleTheme {
 const BACK_LABEL: Partial<Record<Screen, string>> = { campaign: 'Về bản đồ', dungeons: 'Về bí cảnh', arena: 'Về đấu trường', lobby: 'Đổi đội hình' };
 
 export default function App() {
-  const [profile, setProfile] = useState<Profile | null>(null);
+  const [rawProfile, setProfile] = useState<Profile | null>(null);
+  const [gear, setGear] = useState<GearItem[]>([]);
+  /** Hồ sơ đã gộp trang bị: mọi màn (lực chiến, chỉ số, luyện tập) đều tính đồ đang mặc. */
+  const profile = useMemo<Profile | null>(() => {
+    if (!rawProfile) return null;
+    return {
+      ...rawProfile,
+      gear,
+      heroes: rawProfile.heroes.map((h) => {
+        const worn = gear.filter((g) => g.heroId === h.heroId);
+        return { ...h, gear: worn.length ? gearBonus(worn) : undefined };
+      }),
+    };
+  }, [rawProfile, gear]);
+  const refreshGear = useCallback(() => {
+    api.gear().then((r) => setGear(r.gear)).catch(() => {});
+  }, []);
+  const userId = rawProfile?.user.id;
+  useEffect(() => {
+    if (userId) refreshGear();
+  }, [userId, refreshGear]);
+  /** Nhận hồ sơ từ server; nếu kèm danh sách đồ (mặc/tháo/phân giải) thì cập nhật luôn. */
+  const applyProfile = useCallback((p: Profile & { gear?: GearItem[] }) => {
+    setProfile(p);
+    if (p.gear) setGear(p.gear);
+  }, []);
   const [checking, setChecking] = useState(!!getToken());
   const [screen, setScreen] = useState<Screen>('lobby');
   const [prep, setPrep] = useState<Prep | null>(null);
@@ -121,7 +147,10 @@ export default function App() {
         seed={battle.seed}
         battleId={battle.battleId}
         theme={themeOf(prep?.target)}
-        onProfile={setProfile}
+        onProfile={(p) => {
+          setProfile(p);
+          refreshGear(); // có thể vừa rơi đồ
+        }}
         backLabel={BACK_LABEL[prep?.back ?? 'lobby'] ?? 'Quay lại'}
         onRetry={prep?.target?.mode === 'arena' ? undefined : () => startBattle(battle.teamIds, battle.practiceEnemy)}
         onBack={() => {
@@ -179,7 +208,7 @@ export default function App() {
     case 'gacha':
       return <Gacha profile={profile} setProfile={setProfile} onBack={toLobby} topBar={topBar} />;
     case 'collection':
-      return <Collection profile={profile} setProfile={setProfile} onBack={toLobby} topBar={topBar} />;
+      return <Collection profile={profile} setProfile={applyProfile} onBack={toLobby} topBar={topBar} />;
     default:
       return (
         <Lobby

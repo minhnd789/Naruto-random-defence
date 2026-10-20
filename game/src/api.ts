@@ -1,4 +1,5 @@
 import { Choice } from './engine/ai';
+import { GearBonus, GearItem } from './engine/gear';
 import { UnitSetup } from './engine/progression';
 import { Reward } from './engine/stages';
 
@@ -16,6 +17,8 @@ export interface OwnedHero {
   exp: number;
   awaken: number;
   dupes: number;
+  /** Tổng chỉ số trang bị đang mặc (client tự gộp từ danh sách đồ). */
+  gear?: GearBonus;
 }
 export interface Profile {
   user: {
@@ -33,6 +36,8 @@ export interface Profile {
   inventory: Record<string, number>;
   stageClears: string[];
   dungeonClears: Record<string, number>;
+  /** Danh sách trang bị (client tự gộp từ /api/gear). */
+  gear?: GearItem[];
 }
 export interface BattleTicket {
   battleId: string;
@@ -46,6 +51,7 @@ export interface BattleOutcome {
   reward: Reward | null;
   firstClear: Reward | null;
   arena: { ratingChange: number; newRating: number } | null;
+  gearDrops?: GearItem[];
   expired: boolean;
   error: string | null;
 }
@@ -175,5 +181,10 @@ export const api = {
     ),
   leaderboard: (type: 'arena' | 'rta') => req<{ season: number; rows: LeaderRow[] }>('GET', `/api/leaderboard?type=${type}`),
   rtaMe: () => req<RtaMe>('GET', '/api/rta/me'),
+  gear: () => req<{ gear: GearItem[] }>('GET', '/api/gear'),
+  equipGear: (id: number, heroId: string) => req<Profile & { gear: GearItem[] }>('POST', `/api/gear/${id}/equip`, { heroId }),
+  unequipGear: (id: number) => req<Profile & { gear: GearItem[] }>('POST', `/api/gear/${id}/unequip`),
+  salvageGear: (ids: number[]) => req<Profile & { gear: GearItem[]; coins: number }>('POST', '/api/gear/salvage', { ids }),
+  devGear: (count: number) => req<Profile & { gear: GearItem[] }>('POST', '/api/dev/gear', { count }),
   battleFinish: (battleId: string, actions: Choice[]) => req<Profile & BattleOutcome>('POST', '/api/battle/finish', { battleId, actions }),
 };

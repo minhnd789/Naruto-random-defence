@@ -25,6 +25,7 @@ import {
   ELEMENTS,
   Reward,
   dungeonEnemies,
+  dungeonLevel,
   dungeonReward,
   dungeonStamina,
   prevStageId,
@@ -34,6 +35,7 @@ import {
 } from '../../game/src/engine/stages';
 import { Element } from '../../game/src/engine/types';
 import { arenaFinish, arenaPrepare } from './arena';
+import { dropGear, gearBonusByHero } from './gear';
 import { Db, Queryable } from './db';
 import { secureRandom } from './gacha';
 import { HttpError, parse } from './http';
@@ -173,9 +175,10 @@ export function registerGameRoutes(app: FastifyInstance, db: Db, requireAuth: (r
         await q.query('SELECT hero_id, level, stars, awaken FROM user_heroes WHERE user_id = $1 AND hero_id = ANY($2::text[])', [req.userId, body.team])
       ).rows;
       if (rows.length !== 5) throw new HttpError(400, 'Đội hình có ninja bạn chưa sở hữu');
+      const gear = await gearBonusByHero(q, req.userId, body.team);
       const team: UnitSetup[] = body.team.map((id) => {
         const r = rows.find((x) => x.hero_id === id)!;
-        return { heroId: id, level: r.level, stars: r.stars, awaken: r.awaken };
+        return { heroId: id, level: r.level, stars: r.stars, awaken: r.awaken, gear: gear.get(id) };
       });
       if (cost) await changeStamina(q, req.userId, -cost);
       await q.query('UPDATE users SET team = $2 WHERE id = $1', [req.userId, JSON.stringify(body.team)]);
@@ -207,6 +210,7 @@ export function registerGameRoutes(app: FastifyInstance, db: Db, requireAuth: (r
       let reward: Reward | null = null;
       let firstClear: Reward | null = null;
       let arena: { ratingChange: number; newRating: number } | null = null;
+      let gearDrops: Awaited<ReturnType<typeof dropGear>> = [];
 
       if (b.mode === 'arena') {
         const r = await arenaFinish(q, req.userId, target as any, victory);
@@ -225,12 +229,15 @@ export function registerGameRoutes(app: FastifyInstance, db: Db, requireAuth: (r
             [req.userId, stage.id],
           );
           if (ins.rows[0].clears === 1) firstClear = stageFirstClear(stage);
+          // Trang bị: 60% có đồ; trùm chắc chắn rơi và dễ ra đồ xịn hơn
+          gearDrops = await dropGear(q, req.userId, stage.level, stage.boss ? 1 : 0.6, stage.boss ? 1 + stage.chapter * 0.5 : stage.chapter * 0.3);
         } else {
           const t = target.tier!;
           reward = dungeonReward(target.dungeon!, t, target.element);
           if (target.dungeon === 'exp') reward.items.exp_book += Math.floor(secureRandom() * 3);
           if (target.dungeon === 'rune' && secureRandom() < 0.5) reward.items[runeId(target.element!)] += 1;
           if (target.dungeon === 'soul' && secureRandom() < 0.3) reward.items.soul_stone += 1;
+          gearDrops = await dropGear(q, req.userId, dungeonLevel(t), 0.4, t * 0.4);
           await q.query(
             `INSERT INTO dungeon_clears (user_id, dungeon_id, tier) VALUES ($1, $2, $3)
              ON CONFLICT (user_id, dungeon_id, tier) DO UPDATE SET clears = dungeon_clears.clears + 1`,
@@ -239,7 +246,7 @@ export function registerGameRoutes(app: FastifyInstance, db: Db, requireAuth: (r
         }
         await grant(q, req.userId, firstClear ? mergeReward(reward, firstClear) : reward);
       }
-      const result = { victory, turns: replay.turns, reward, firstClear, arena, expired, error: replay.error ?? null };
+      const result = { victory, turns: replay.turns, reward, firstClear, arena, gearDrops, expired, error: replay.error ?? null };
       await q.query('UPDATE battles SET status = $2, result = $3, finished_at = now() WHERE id = $1', [battleId, victory ? 'won' : 'lost', JSON.stringify(result)]);
       // Kết quả client báo thắng nhưng replay thua: ghi log để theo dõi gian lận
       if (replay.error) app.log.warn({ userId: req.userId, battleId, error: replay.error }, 'replay không hợp lệ');

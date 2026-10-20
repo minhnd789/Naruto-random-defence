@@ -2,13 +2,15 @@ import { useState } from 'react';
 import { Profile } from '../api';
 import { HEROES, heroById } from '../engine/heroes';
 import { power } from '../engine/progression';
+import { GearBag, HeroGearPanel } from './Gear';
 import { HeroUpgrade } from './HeroUpgrade';
 import { ItemIcon } from './Items';
 import { HeroCard, HeroDetail, progOf } from './TeamSelect';
 
-export function Collection({ profile, setProfile, onBack, topBar }: { profile: Profile; setProfile: (p: Profile) => void; onBack: () => void; topBar: React.ReactNode }) {
+export function Collection({ profile, setProfile, onBack, topBar }: { profile: Profile; setProfile: (p: Profile & { gear?: import('../engine/gear').GearItem[] }) => void; onBack: () => void; topBar: React.ReactNode }) {
   const [filter, setFilter] = useState<0 | 3 | 4 | 5>(0);
   const [sel, setSel] = useState(profile.heroes[0]?.heroId ?? HEROES[0].id);
+  const [bag, setBag] = useState(false);
   const owned = new Map(profile.heroes.map((h) => [h.heroId, h]));
   const list = HEROES.filter((h) => !filter || h.rarity === filter).sort(
     (a, b) =>
@@ -27,6 +29,9 @@ export function Collection({ profile, setProfile, onBack, topBar }: { profile: P
         <h2>
           Ninja · {owned.size}/{HEROES.length}
         </h2>
+        <button className="btn-mini bag-btn" onClick={() => setBag(true)}>
+          🎒 Túi đồ ({profile.gear?.length ?? 0})
+        </button>
         <div className="inv-strip">
           {Object.entries(profile.inventory)
             .sort()
@@ -56,11 +61,13 @@ export function Collection({ profile, setProfile, onBack, topBar }: { profile: P
         </section>
         <section className="panel">
           <HeroDetail hero={heroById(sel)} dupes={o?.dupes} progress={o ? progOf(profile.heroes, sel) : undefined}>
+            {o && <HeroGearPanel heroId={sel} profile={profile} setProfile={setProfile} />}
             {o && <HeroUpgrade key={sel} owned={o} profile={profile} setProfile={setProfile} />}
           </HeroDetail>
           {!o && <p className="hint">Nhận ninja này qua Triệu Hồi.</p>}
         </section>
       </main>
+      {bag && <GearBag profile={profile} setProfile={setProfile} onClose={() => setBag(false)} />}
     </div>
   );
 }

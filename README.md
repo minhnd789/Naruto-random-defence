@@ -131,3 +131,31 @@ Cần sở hữu ít nhất 6 ninja mới vào được RTA.
   | RTA | RTA |
 
   Mỗi bối cảnh có hiệu ứng môi trường riêng: cánh hoa, đom đóm, mưa, sương, cát, tàn lửa, ánh sao.
+
+## Trang bị
+
+8 ô: Vũ khí (Công), Mũ (Máu), Áo (Thủ), Quần (Máu %), Găng tay (Chí mạng %), Giày (Tốc độ), Băng đô (Công %), Pháp khí (Công % + Máu %, hiếm hơn).
+
+| Phẩm chất | Màu | Chỉ số phụ | Hệ số chỉ số chính |
+|---|---|---|---|
+| Thường | xám | 0 | ×1 |
+| Tinh Anh | xanh lá | 1 | ×1,15 |
+| Hiếm | xanh dương | 2 | ×1,3 |
+| Sử Thi | vàng | 3 | ×1,5 |
+| Huyền Thoại | đỏ | 4 | ×1,75 |
+| Thần Thoại | cầu vồng | 4 (luôn ở nửa trên) | ×2,1 |
+
+- **Rơi đồ khi thắng:**
+  - Ải: 60% có đồ, trùm chắc chắn rơi và dễ ra phẩm chất cao hơn.
+  - Bí cảnh: 40% có đồ.
+  - Cấp đồ bằng cấp ải.
+- **Tài khoản mới:** nhận sẵn 4 món Tinh Anh.
+- **Phân giải:** đồ chưa mặc đổi ra Xu.
+- **Xác thực:** chỉ số trang bị được server chụp lại lúc vào trận (ải, bí cảnh, đấu trường, RTA), nên trận vẫn xác thực được.
+- **Code:** công thức trong `game/src/engine/gear.ts`, server trong `server/src/gear.ts`.
+
+## Điểm nộ
+
+- Mỗi ninja có 3 ô nộ. Vào trận bắt đầu ở 0 nộ.
+- Mỗi lượt dùng đòn thường hoặc kỹ năng 2 thì +1 nộ.
+- Tuyệt kỹ tốn 1 nộ, nên không dùng được ngay ở lượt đầu.

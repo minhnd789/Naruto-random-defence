@@ -19,6 +19,7 @@ import { enemySetup } from '../../game/src/engine/stages';
 import { TeamId } from '../../game/src/engine/types';
 import { ensureRta, frontlineFirst } from './arena';
 import { verifyToken } from './auth';
+import { gearBonusByHero } from './gear';
 import { Db } from './db';
 
 type Side = TeamId;
@@ -334,6 +335,7 @@ export class RtaManager {
   private async loadSeat(userId: number, side: Side, socket: WebSocket): Promise<Seat> {
     const u = (await this.db.query('SELECT display_name FROM users WHERE id = $1', [userId])).rows[0];
     const heroes = (await this.db.query('SELECT hero_id, level, stars, awaken FROM user_heroes WHERE user_id = $1', [userId])).rows;
+    const gear = await gearBonusByHero(this.db, userId, heroes.map((h) => h.hero_id));
     // Chỉ tạo hồ sơ RTA khi đủ điều kiện, để người chưa đủ ninja không lọt vào bảng xếp hạng
     const rating = heroes.length >= RTA_MIN_HEROES ? (await this.db.tx((q) => ensureRta(q, userId))).rating : 0;
     return {
@@ -341,7 +343,7 @@ export class RtaManager {
       userId,
       name: u.display_name,
       rating,
-      roster: new Map(heroes.map((h) => [h.hero_id, { level: h.level, stars: h.stars, awaken: h.awaken }])),
+      roster: new Map(heroes.map((h) => [h.hero_id, { level: h.level, stars: h.stars, awaken: h.awaken, gear: gear.get(h.hero_id) }])),
       socket,
     };
   }

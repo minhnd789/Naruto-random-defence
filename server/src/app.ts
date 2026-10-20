@@ -7,6 +7,7 @@ import { RateLimiter, hashPassword, signToken, verifyPassword, verifyToken } fro
 import { Db } from './db';
 import { registerArenaRoutes } from './arena';
 import { registerGameRoutes } from './game';
+import { grantStarterGear, registerGearRoutes } from './gear';
 import { registerRtaRoutes, RtaOptions } from './rta';
 import { HttpError, parse } from './http';
 import { addItems, changeStamina, profile } from './profile';
@@ -77,6 +78,7 @@ export async function buildApp(db: Db, secret: Uint8Array, opts: { devTools: boo
         await q.query('INSERT INTO user_heroes (user_id, hero_id, stars) VALUES ($1, $2, $3)', [id, hid, heroById(hid).rarity]);
       }
       await addItems(q, id, START_ITEMS);
+      await grantStarterGear(q, id);
       return id;
     });
     return { token: await signToken(secret, userId), ...(await profile(db, userId)) };
@@ -192,6 +194,7 @@ export async function buildApp(db: Db, secret: Uint8Array, opts: { devTools: boo
 
   registerGameRoutes(app, db, requireAuth);
   registerArenaRoutes(app, db, requireAuth);
+  registerGearRoutes(app, db, requireAuth, opts.devTools);
   const rta = registerRtaRoutes(app, db, secret, opts.rta);
   app.decorate('rta', rta);
 

@@ -116,7 +116,7 @@ export function HeroDetail({ hero, dupes, progress, children }: { hero: HeroDef;
 
 export const progOf = (owned: OwnedHero[], id: string): HeroProgress => {
   const o = owned.find((h) => h.heroId === id);
-  return o ? { level: o.level, stars: o.stars, awaken: o.awaken } : { level: 1, stars: heroById(id).rarity, awaken: 0 };
+  return o ? { level: o.level, stars: o.stars, awaken: o.awaken, gear: o.gear } : { level: 1, stars: heroById(id).rarity, awaken: 0 };
 };
 export const teamPower = (setups: UnitSetup[]) => setups.reduce((s, u) => s + power(heroById(u.heroId), u), 0);
 

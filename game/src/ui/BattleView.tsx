@@ -8,6 +8,7 @@ import { RewardList } from './Items';
 import { Portrait } from './Portrait';
 import { SkillIcon } from './SkillIcon';
 import { STATUS_INFO } from './statusInfo';
+import { GearIcon } from './Gear';
 
 type ServerState = { status: 'pending' } | { status: 'done'; outcome: BattleOutcome } | { status: 'error'; message: string };
 
@@ -300,6 +301,14 @@ function Result({
             {server.status === 'error' && <span className="form-error">{server.message}</span>}
             {server.status === 'done' && server.outcome.reward && <RewardList label="Nhận được" reward={server.outcome.reward} />}
             {server.status === 'done' && server.outcome.firstClear && <RewardList label="Lần đầu" reward={server.outcome.firstClear} />}
+            {server.status === 'done' && !!server.outcome.gearDrops?.length && (
+              <div className="reward-list gear-drops">
+                <span className="rl-label">Trang bị</span>
+                {server.outcome.gearDrops.map((g) => (
+                  <GearIcon key={g.id} item={g} size={46} />
+                ))}
+              </div>
+            )}
             {server.status === 'done' && server.outcome.arena && (
               <span className={`rating-change ${server.outcome.arena.ratingChange >= 0 ? 'up' : 'down'}`}>
                 Điểm đấu trường {server.outcome.arena.ratingChange >= 0 ? '+' : ''}
