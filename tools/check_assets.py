@@ -21,8 +21,8 @@ import numpy as np
 from PIL import Image, ImageChops, ImageStat
 
 ROOT = Path(__file__).resolve().parent.parent
-FX = ROOT / "game" / "public" / "fx"
-BG = ROOT / "game" / "public" / "bg"
+FX = ROOT / "art" / "fx"
+BG = ROOT / "art" / "bg"
 CELL = 512
 BACKGROUNDS = ["bg_konoha", "bg_forest", "bg_rain", "bg_valley", "bg_desert", "bg_arena", "bg_rta"]
 

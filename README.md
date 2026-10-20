@@ -111,3 +111,23 @@ Kết nối WebSocket qua `/api/rta/ws?token=…`. Thứ tự một trận:
 6. **Kết quả:** Elo cập nhật cho cả hai người. Mọi trận được lưu vào bảng `rta_matches` (seed, lượt cấm/chọn, đội hình) để xem lại sau.
 
 Cần sở hữu ít nhất 6 ninja mới vào được RTA.
+
+## Ảnh nền và hiệu ứng kỹ năng
+
+- **Ảnh gốc:** nằm trong `art/`. Gồm `art/bg/*.png` (1920×1080) và `art/fx/*.png` (spritesheet 2048×2048, lưới 4×4). Cách tạo ảnh xem [docs/ART_BRIEF.md](docs/ART_BRIEF.md).
+- **Bản dùng trong game:** WebP nhẹ, nằm ở `game/public/fx` và `game/public/bg`. Tạo bằng lệnh `python tools/build_assets.py`, chỉ build lại file nào ảnh gốc có thay đổi. Dung lượng giảm từ 119 MB xuống 17 MB.
+- **Kiểm tra ảnh gốc:** `python tools/check_assets.py`.
+- **Biên đạo kỹ năng:** khai báo trong `game/src/battle/skillFx.ts`. Mỗi skill gồm các phần tụ chiêu, cầm trên tay khi lao tới, cách di chuyển (lao tới / đứng / dịch chuyển), vật bay (từ người hoặc từ trời), vụ nổ lớn kèm khung trúng đòn, hiệu ứng trúng, và hiệu ứng lên đồng đội. Skill nào không khai báo thì lấy hiệu ứng theo hệ.
+- **Bối cảnh theo chế độ chơi:**
+
+  | Chế độ | Bối cảnh |
+  |---|---|
+  | Chương 1 | Làng Lá |
+  | Chương 2 | Rừng Tử Thần |
+  | Chương 3 | Làng Mưa |
+  | Chương 4 | Thung Lũng Tận Cùng |
+  | Bí cảnh | Rừng / Sa mạc / Thung lũng |
+  | Đấu trường | Đấu trường |
+  | RTA | RTA |
+
+  Mỗi bối cảnh có hiệu ứng môi trường riêng: cánh hoa, đom đóm, mưa, sương, cát, tàn lửa, ánh sao.

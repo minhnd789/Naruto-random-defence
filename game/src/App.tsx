@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { api, ApiError, BattleTarget, getToken, Profile, setToken } from './api';
+import type { BattleTheme } from './battle/BattleScene';
 import { buildTeam, UnitSetup } from './engine/progression';
-import { enemySetup } from './engine/stages';
+import { enemySetup, stageById } from './engine/stages';
 import { HeroDef } from './engine/types';
 import { Arena } from './ui/Arena';
 import { AuthScreen } from './ui/AuthScreen';
@@ -27,6 +28,15 @@ interface ActiveBattle {
   battleId?: string;
   teamIds: string[];
   practiceEnemy?: string[];
+}
+
+/** Bối cảnh trận đấu theo chế độ chơi. */
+function themeOf(target: BattleTarget | null | undefined): BattleTheme {
+  if (!target) return 'konoha';
+  if (target.mode === 'arena') return 'arena';
+  if (target.mode === 'dungeon') return target.dungeon === 'exp' ? 'forest' : target.dungeon === 'rune' ? 'desert' : 'valley';
+  const ch = stageById(target.stageId)?.chapter ?? 1;
+  return (['konoha', 'forest', 'rain', 'valley'] as const)[Math.min(3, ch - 1)];
 }
 
 const BACK_LABEL: Partial<Record<Screen, string>> = { campaign: 'Về bản đồ', dungeons: 'Về bí cảnh', arena: 'Về đấu trường', lobby: 'Đổi đội hình' };
@@ -110,6 +120,7 @@ export default function App() {
         enemy={battle.enemy}
         seed={battle.seed}
         battleId={battle.battleId}
+        theme={themeOf(prep?.target)}
         onProfile={setProfile}
         backLabel={BACK_LABEL[prep?.back ?? 'lobby'] ?? 'Quay lại'}
         onRetry={prep?.target?.mode === 'arena' ? undefined : () => startBattle(battle.teamIds, battle.practiceEnemy)}

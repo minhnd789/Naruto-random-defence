@@ -48,8 +48,14 @@ export class Tweener {
 
   /** Tween các thuộc tính số của obj tới giá trị đích. */
   to(obj: Obj, props: Obj, duration: number, e: Ease = ease.outQuad): Promise<void> {
+    // Cảnh đã huỷ (thoát trận / tải lại trang) mà animation cũ vẫn gọi tới: bỏ qua
+    if (!obj || (obj as any).destroyed) return Promise.resolve();
     const from: Obj = {};
-    for (const k of Object.keys(props)) from[k] = obj[k];
+    try {
+      for (const k of Object.keys(props)) from[k] = obj[k];
+    } catch {
+      return Promise.resolve();
+    }
     return this.run(duration, (k) => {
       if ((obj as any).destroyed) return;
       for (const key of Object.keys(props)) obj[key] = from[key] + (props[key] - from[key]) * k;

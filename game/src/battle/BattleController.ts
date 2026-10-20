@@ -2,7 +2,7 @@
 import { chooseAction, Choice } from '../engine/ai';
 import { Battle, RAGE_START } from '../engine/battle';
 import { HeroDef, SkillDef, TeamId, Unit } from '../engine/types';
-import { BattleScene } from './BattleScene';
+import { BattleScene, BattleTheme } from './BattleScene';
 
 export interface HudUnit {
   uid: string;
@@ -56,6 +56,7 @@ export class BattleController {
   onOver?: (actions: Choice[]) => void;
   /** Phe của người đang xem (RTA có thể là B). */
   mySide: TeamId = 'A';
+  theme: BattleTheme = 'konoha';
   remote?: RemoteDriver;
 
   constructor(teamA: HeroDef[], teamB: HeroDef[], seed: number, private onState: (s: HudState) => void) {
@@ -63,7 +64,7 @@ export class BattleController {
   }
 
   async start(host: HTMLElement) {
-    this.scene = await BattleScene.create(host, this.battle, this.mySide);
+    this.scene = await BattleScene.create(host, this.battle, this.mySide, this.theme);
     if (this.disposed) return this.scene.destroy();
     this.scene.setSpeed(this.speed);
     this.scene.onUnitClick = (uid) => this.clickUnit(uid);

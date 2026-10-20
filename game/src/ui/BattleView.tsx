@@ -1,6 +1,7 @@
 import { CSSProperties, ReactNode, useEffect, useRef, useState } from 'react';
 import { api, BattleOutcome, Profile } from '../api';
 import { BattleController, HudState, RemoteDriver } from '../battle/BattleController';
+import type { BattleTheme } from '../battle/BattleScene';
 import { ELEMENT_INFO } from '../engine/heroes';
 import { HeroDef, TeamId } from '../engine/types';
 import { RewardList } from './Items';
@@ -20,6 +21,7 @@ export function BattleView({
   onBack,
   backLabel = 'Đổi đội hình',
   mySide = 'A',
+  theme = 'konoha',
   remote,
   overlay,
   rtaEnd,
@@ -35,6 +37,7 @@ export function BattleView({
   backLabel?: string;
   // RTA
   mySide?: TeamId;
+  theme?: BattleTheme;
   remote?: RemoteDriver;
   overlay?: ReactNode;
   rtaEnd?: { winner: TeamId; changes: Record<TeamId, number>; ranked: boolean; reason: string } | null;
@@ -55,6 +58,7 @@ export function BattleView({
   useEffect(() => {
     const ctrl = new BattleController(team, enemy, seed, setHud);
     ctrl.mySide = mySide;
+    ctrl.theme = theme;
     ctrl.remote = remote;
     ctrl.onOver = (actions) => {
       const p = report(actions);

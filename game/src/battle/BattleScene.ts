@@ -4,7 +4,24 @@ import { Battle } from '../engine/battle';
 import { ELEMENT_INFO } from '../engine/heroes';
 import { BattleEvent, SkillDef, StatusType, Unit } from '../engine/types';
 import { HORIZON, STAGE_H, STAGE_W, makeBackdrop, makeGlowTexture, makeStreakTexture } from './backdrop';
+import { SkillFx, fxNeeded, skillFx } from './skillFx';
 import { Tweener, ease } from './tween';
+import { FxInstance, FxPlayer, fxLibrary } from './vfx';
+
+export type BattleTheme = 'konoha' | 'forest' | 'rain' | 'valley' | 'desert' | 'arena' | 'rta';
+
+/** Ảnh nền: `ground` = tỉ lệ chiều cao nơi mặt đất phẳng bắt đầu, để căn chỗ đứng của nhân vật. */
+const THEMES: Record<BattleTheme, { ground: number; ambient: 'petals' | 'fireflies' | 'rain' | 'mist' | 'sand' | 'embers' | 'sparkles' }> = {
+  konoha: { ground: 0.55, ambient: 'petals' },
+  forest: { ground: 0.6, ambient: 'fireflies' },
+  rain: { ground: 0.62, ambient: 'rain' },
+  valley: { ground: 0.8, ambient: 'mist' },
+  desert: { ground: 0.66, ambient: 'sand' },
+  arena: { ground: 0.66, ambient: 'embers' },
+  rta: { ground: 0.72, ambient: 'sparkles' },
+};
+/** Độ cao (trong khung 1280x720) mà mặt đất của ảnh nền nên trùng vào: ngay trên hàng sau. */
+const GROUND_STAGE_Y = 330;
 
 export const FONT = '"Be Vietnam Pro", system-ui, sans-serif';
 export const heroUrl = (img: string) => `/heroes/${img}`;
@@ -118,6 +135,7 @@ class UnitView {
   drawBar() {
     const max = this.unit.maxHp;
     const g = this.bar;
+    if (g.destroyed) return;
     const w = BAR_W, h = 10;
     g.clear();
     g.roundRect(-w / 2 - 2, -2, w + 4, h + 4, 4).fill({ color: 0x000000, alpha: 0.75 });
@@ -173,6 +191,9 @@ interface Particle {
   grow: number;
   baseScale: number;
   loop?: boolean;
+  /** Hạt lặp lại: đặt lại vị trí khi hết vòng đời (mưa rơi từ trên, đom đóm bay quanh…). */
+  reset?: (p: Particle) => void;
+  spin?: number;
 }
 
 export class BattleScene {
@@ -182,8 +203,16 @@ export class BattleScene {
   world = new Container(); // phần bị rung khi va chạm
   bgSprite!: Sprite;
   ambient = new Container();
+  groundFx = new Container(); // hiệu ứng dưới chân (vòng ấn chú)
   unitLayer = new Container();
   fxLayer = new Container();
+  weather = new Container(); // mưa, cánh hoa, cát bay: phía trước nhân vật
+  fx = new FxPlayer(fxLibrary);
+  theme: BattleTheme = 'konoha';
+  private curFx: SkillFx | null = null;
+  private allyFxDone = new Set<string>();
+  private statusFx = new Map<string, Partial<Record<'stun' | 'burn' | 'shield', FxInstance>>>();
+  private bgDrift = 0;
   textLayer = new Container();
   overlay = new Container();
   views = new Map<string, UnitView>();
@@ -196,9 +225,10 @@ export class BattleScene {
   private time = 0;
   private destroyed = false;
 
-  static async create(host: HTMLElement, battle: Battle, mySide: 'A' | 'B' = 'A'): Promise<BattleScene> {
+  static async create(host: HTMLElement, battle: Battle, mySide: 'A' | 'B' = 'A', theme: BattleTheme = 'konoha'): Promise<BattleScene> {
     const s = new BattleScene();
     s.mySide = mySide;
+    s.theme = theme;
     await s.init(host, battle);
     return s;
   }
@@ -216,14 +246,21 @@ export class BattleScene {
     await document.fonts.load('900 20px "Be Vietnam Pro"').catch(() => {});
 
     const urls = [...new Set(battle.units.map((u) => heroUrl(u.hero.image)))];
-    const loaded = await Assets.load(urls);
+    const skills = battle.units.flatMap((u) => u.hero.skills.map((skill) => ({ skill, element: u.hero.element })));
+    // Tải song song: ảnh nhân vật, spritesheet hiệu ứng cần cho trận này, ảnh nền
+    const [loaded, , bgTex] = await Promise.all([
+      Assets.load(urls),
+      fxLibrary.load(fxNeeded(skills)),
+      Assets.load<Texture>(`/bg/bg_${this.theme}.webp`).catch(() => null),
+    ]);
     for (const u of urls) this.textures.set(u, loaded[u]);
 
     this.glowTex = makeGlowTexture();
     this.streakTex = makeStreakTexture();
-    this.bgSprite = new Sprite(makeBackdrop());
+    this.bgSprite = new Sprite(bgTex ?? makeBackdrop());
+    this.bgSprite.anchor.set(0.5, 0);
     this.app.stage.addChild(this.bgSprite, this.root);
-    this.world.addChild(this.ambient, this.unitLayer, this.fxLayer, this.textLayer);
+    this.world.addChild(this.ambient, this.groundFx, this.unitLayer, this.fxLayer, this.weather, this.textLayer);
     this.root.addChild(this.world, this.overlay);
 
     for (const u of battle.units) {
@@ -253,10 +290,18 @@ export class BattleScene {
     const s = Math.min(w / STAGE_W, h / STAGE_H);
     this.root.scale.set(s);
     this.root.position.set((w - STAGE_W * s) / 2, (h - STAGE_H * s) / 2);
-    const bs = Math.max(w / STAGE_W, h / STAGE_H);
-    this.bgSprite.width = STAGE_W * bs;
-    this.bgSprite.height = STAGE_H * bs;
-    this.bgSprite.position.set((w - STAGE_W * bs) / 2, (h - STAGE_H * bs) / 2);
+    // Ảnh nền phủ kín màn hình, rồi dời dọc để mặt đất của ảnh trùng chỗ đứng của nhân vật.
+    // Không phóng quá 1.4 lần mức phủ kín; ảnh có mặt đất thấp (Thung Lũng) thì nhân vật đứng trên mặt nước.
+    const tex = this.bgSprite.texture;
+    const g = THEMES[this.theme].ground;
+    const groundScreen = this.root.y + GROUND_STAGE_Y * s;
+    const cover = Math.max(w / tex.width, h / tex.height);
+    const want = Math.max(cover, (h - groundScreen) / ((1 - g) * tex.height), groundScreen / (g * tex.height));
+    const bs = Math.min(want, cover * 1.4) * 1.02; // dư 2% cho hiệu ứng trôi nhẹ
+    const hd = tex.height * bs;
+    this.bgSprite.scale.set(bs);
+    this.bgSprite.x = w / 2;
+    this.bgSprite.y = Math.min(0, Math.max(h - hd, groundScreen - g * hd));
   }
 
   private sortUnits() {
@@ -267,6 +312,18 @@ export class BattleScene {
     this.tw.update(dtMs);
     const dt = dtMs * this.tw.speed;
     this.time += dt;
+    this.fx.update(dt);
+    // Nền trôi rất nhẹ cho cảm giác sống động
+    this.bgDrift += dtMs;
+    if (this.bgSprite) this.bgSprite.x = this.app.screen.width / 2 + Math.sin(this.bgDrift / 6000) * this.app.screen.width * 0.008;
+    // Hiệu ứng trạng thái bám theo nhân vật khi họ lao đi
+    for (const [uid, m] of this.statusFx) {
+      const v = this.views.get(uid)!;
+      const top = v.root.y - UNIT_H * v.scale;
+      m.stun?.sprite.position.set(v.root.x, top - 6);
+      m.burn?.sprite.position.set(v.root.x, v.root.y + 4);
+      m.shield?.sprite.position.set(v.root.x, v.root.y - UNIT_H * v.scale * 0.5);
+    }
     for (const v of this.views.values()) {
       if (v.dead) continue;
       const ph = this.time / 520 + v.unit.slot * 1.3 + (v.mine ? 0 : 2);
@@ -289,11 +346,15 @@ export class BattleScene {
       p.s.y += p.vy * dt;
       p.s.scale.set(p.baseScale * (1 + p.grow * k));
       p.s.alpha = k < 0.15 ? k / 0.15 : 1 - (k - 0.15) / 0.85;
+      if (p.spin) p.s.rotation += p.spin * dt;
       if (k >= 1) {
         if (p.loop) {
           p.life = 0;
-          p.s.x = Math.random() * STAGE_W;
-          p.s.y = STAGE_H + 20;
+          if (p.reset) p.reset(p);
+          else {
+            p.s.x = Math.random() * STAGE_W;
+            p.s.y = STAGE_H + 20;
+          }
         } else {
           p.s.destroy();
           this.particles.splice(i, 1);
@@ -304,19 +365,98 @@ export class BattleScene {
 
   // ---------- Tiện ích hiệu ứng ----------
   private spawnAmbient() {
-    for (let i = 0; i < 45; i++) {
-      const s = new Sprite(this.glowTex);
-      s.anchor.set(0.5);
-      s.blendMode = 'add';
-      s.tint = Math.random() < 0.7 ? 0xffa060 : 0xffe0a0;
-      s.position.set(Math.random() * STAGE_W, HORIZON + Math.random() * (STAGE_H - HORIZON + 50));
-      this.ambient.addChild(s);
-      const p: Particle = {
-        s, vx: (Math.random() - 0.5) * 0.015, vy: -0.02 - Math.random() * 0.03, g: 0,
-        life: Math.random() * 9000, max: 7000 + Math.random() * 5000, grow: 0, baseScale: 0.08 + Math.random() * 0.14, loop: true,
-      };
-      this.particles.push(p);
+    const kind = THEMES[this.theme].ambient;
+    const rnd = (a: number, b: number) => a + Math.random() * (b - a);
+    const add = (layer: Container, tex: Texture, n: number, init: (p: Particle) => void) => {
+      for (let i = 0; i < n; i++) {
+        const s = new Sprite(tex);
+        s.anchor.set(0.5);
+        layer.addChild(s);
+        const p: Particle = { s, vx: 0, vy: 0, g: 0, life: 0, max: 1, grow: 0, baseScale: 0.1, loop: true };
+        init(p);
+        p.reset!(p);
+        p.life = Math.random() * p.max; // rải đều vòng đời để không xuất hiện cùng lúc
+        this.particles.push(p);
+      }
+    };
+    if (kind === 'rain') {
+      add(this.weather, this.streakTex, 90, (p) => {
+        p.s.rotation = Math.PI / 2 + 0.25;
+        p.s.tint = 0xb8c8ff;
+        p.reset = (q) => {
+          q.s.position.set(rnd(-100, STAGE_W + 100), rnd(-300, -20));
+          q.vx = -0.25;
+          q.vy = rnd(1.4, 1.9);
+          q.max = rnd(500, 700);
+          q.baseScale = rnd(0.25, 0.45);
+        };
+      });
+      return;
     }
+    const conf = {
+      petals: { n: 40, tint: [0xffb7d5, 0xffd6e6, 0xff9ec4], add: false, front: true },
+      sand: { n: 70, tint: [0xe8c48a, 0xd9a35a, 0xf5dcb0], add: false, front: true },
+      fireflies: { n: 40, tint: [0xd8ff7a, 0x9dff9a, 0xfff2a0], add: true, front: false },
+      mist: { n: 45, tint: [0xdff4ff, 0xffffff, 0xbfe0ff], add: true, front: false },
+      embers: { n: 45, tint: [0xffa060, 0xffe0a0, 0xff7a3a], add: true, front: false },
+      sparkles: { n: 55, tint: [0xb98cff, 0x7af0ff, 0xffffff], add: true, front: false },
+    }[kind];
+    const tex = kind === 'petals' || kind === 'sand' ? this.petalTex() : this.glowTex;
+    add(conf.front ? this.weather : this.ambient, tex, conf.n, (p) => {
+      p.s.blendMode = conf.add ? 'add' : 'normal';
+      p.reset = (q) => {
+        q.s.tint = conf.tint[Math.floor(Math.random() * conf.tint.length)];
+        if (kind === 'petals') {
+          q.s.position.set(rnd(0, STAGE_W + 200), rnd(-60, -10));
+          q.vx = rnd(-0.06, -0.02);
+          q.vy = rnd(0.03, 0.06);
+          q.spin = rnd(-0.003, 0.003);
+          q.max = rnd(9000, 14000);
+          q.baseScale = rnd(0.25, 0.45);
+        } else if (kind === 'sand') {
+          q.s.position.set(rnd(-200, -20), rnd(HORIZON, STAGE_H));
+          q.vx = rnd(0.25, 0.5);
+          q.vy = rnd(-0.01, 0.01);
+          q.spin = rnd(-0.01, 0.01);
+          q.max = rnd(3000, 5000);
+          q.baseScale = rnd(0.08, 0.16);
+        } else if (kind === 'fireflies') {
+          q.s.position.set(rnd(0, STAGE_W), rnd(HORIZON - 80, STAGE_H));
+          q.vx = rnd(-0.02, 0.02);
+          q.vy = rnd(-0.015, 0.01);
+          q.max = rnd(4000, 8000);
+          q.baseScale = rnd(0.12, 0.22);
+        } else if (kind === 'mist') {
+          q.s.position.set(rnd(0, STAGE_W), rnd(HORIZON, STAGE_H + 40));
+          q.vx = rnd(-0.01, 0.01);
+          q.vy = rnd(-0.03, -0.01);
+          q.max = rnd(6000, 10000);
+          q.baseScale = rnd(0.6, 1.4);
+        } else {
+          q.s.position.set(rnd(0, STAGE_W), rnd(HORIZON, STAGE_H + 50));
+          q.vx = rnd(-0.008, 0.008);
+          q.vy = rnd(-0.05, -0.02);
+          q.max = rnd(6000, 11000);
+          q.baseScale = rnd(0.07, 0.2);
+        }
+      };
+    });
+  }
+
+  /** Cánh hoa / hạt cát: hình bầu dục nhỏ mềm vẽ bằng canvas. */
+  private petalTex(): Texture {
+    const c = document.createElement('canvas');
+    c.width = 48;
+    c.height = 32;
+    const ctx = c.getContext('2d')!;
+    const g = ctx.createRadialGradient(24, 16, 2, 24, 16, 22);
+    g.addColorStop(0, 'rgba(255,255,255,1)');
+    g.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.ellipse(24, 16, 22, 12, 0, 0, Math.PI * 2);
+    ctx.fill();
+    return Texture.from(c);
   }
 
   burst(x: number, y: number, color: number, n = 14, speed = 0.45, size = 0.4, layer = this.fxLayer, gravity = 0.0006) {
@@ -428,6 +568,7 @@ export class BattleScene {
       v.hp = u.hp;
       v.refreshStatuses();
       v.drawBar();
+      this.syncStatusFx(v);
     }
   }
 
@@ -467,26 +608,79 @@ export class BattleScene {
     const targets = sk.targets.map((id) => this.views.get(id)!);
     const color = ELEMENT_INFO[actor.unit.hero.element].color;
     const offensive = skill.target === 'enemy' || skill.target === 'allEnemies';
+    const fx = skillFx(skill, actor.unit.hero.element);
+    const has = (n?: string) => fxLibrary.has(n);
+    this.curFx = fx;
+    this.allyFxDone.clear();
 
     if (skill.cutin) await this.cutin(actor, skill);
     else this.skillBanner(actor, skill);
 
-    let moved = false;
-    if (offensive && skill.melee) {
-      moved = true;
-      const t = targets[0];
-      const dest = skill.target === 'enemy'
-        ? { x: t.home.x - actor.dir * 125, y: t.home.y + 1 }
-        : { x: STAGE_W / 2 + actor.dir * 40, y: 540 };
-      await this.dash(actor, dest);
-    } else {
-      await this.castAnim(actor, color);
-      if (offensive && skill.target === 'enemy') await this.projectile(actor, targets[0], color);
-      else if (offensive) await this.aoeWave(targets, color, !!skill.cutin);
-      else for (const t of targets) this.burst(t.home.x, t.chestY, color, 10, 0.25, 0.35, this.fxLayer, -0.0003);
+    // 1. Tụ chiêu tại người dùng
+    if (has(fx.cast)) {
+      const ground = fx.cast === 'fx_cast_circle';
+      const c = this.fx.play(fx.cast, ground ? this.groundFx : this.fxLayer, actor.home.x, ground ? actor.home.y : actor.chestY, {
+        scale: (fx.castScale ?? (ground ? 1.2 : 1)) * actor.scale,
+      });
+      if (ground && c) c.sprite.scale.y *= 0.45; // vòng ấn chú nằm nghiêng trên mặt đất
+      if (c && fx.move === 'stay') await this.tw.wait(Math.min(420, c.duration * 0.4));
     }
 
-    // Diễn các sự kiện sau khi ra đòn
+    const center = targets.length
+      ? { x: targets.reduce((s, t) => s + t.home.x, 0) / targets.length, y: targets.reduce((s, t) => s + t.chestY, 0) / targets.length }
+      : { x: STAGE_W / 2, y: 480 };
+    const t0 = targets[0];
+    let moved: 'dash' | 'teleport' | null = null;
+
+    // 2. Tiếp cận: lao tới / dịch chuyển (cầm Rasengan, Chidori trên tay) hoặc bắn vật bay
+    if (offensive && (fx.move === 'dash' || fx.move === 'teleport')) {
+      moved = fx.move;
+      const dest = skill.target === 'enemy' ? { x: t0.home.x - actor.dir * 125, y: t0.home.y + 1 } : { x: center.x - actor.dir * 170, y: 540 };
+      const hold = has(fx.hold) ? this.fx.play(fx.hold, this.fxLayer, actor.root.x, actor.chestY, { scale: 0.55 * actor.scale, persist: true }) : null;
+      const follow = hold
+        ? this.tw.every(() => hold.sprite.position.set(actor.root.x + actor.dir * 62 * actor.scale, actor.root.y - UNIT_H * actor.scale * 0.48))
+        : null;
+      if (fx.move === 'teleport') await this.teleport(actor, dest);
+      else await this.dash(actor, dest);
+      if (hold) {
+        // Dí quả cầu vào mục tiêu rồi mới tắt
+        await this.tw.to(hold.sprite.scale, { x: hold.sprite.scale.x * 1.5, y: hold.sprite.scale.y * 1.5 }, 90, ease.outQuad);
+        follow?.();
+        hold.stop(100);
+      }
+    } else if (offensive) {
+      if (!has(fx.cast)) await this.castAnim(actor, color);
+      else {
+        this.tw.to(actor.root, { x: actor.home.x + actor.dir * 22 }, 130, ease.outQuad).then(() => this.tw.to(actor.root, { x: actor.home.x }, 280, ease.outCubic));
+      }
+      if (has(fx.proj)) await this.projectileFx(actor, fx, skill.target === 'enemy' ? { x: t0.home.x, y: t0.chestY } : center);
+      else if (!has(fx.burst) && skill.target === 'enemy') await this.projectile(actor, t0, color);
+    } else {
+      // Hỗ trợ: hiệu ứng trên từng đồng đội
+      if (!has(fx.cast)) await this.castAnim(actor, color);
+      for (const t of targets) this.playAllyFx(t);
+      await this.tw.wait(260);
+    }
+
+    // 3. Vụ nổ lớn: khớp thời điểm sát thương với khung "trúng"
+    if (offensive && has(fx.burst)) {
+      const spots = fx.burstAt === 'center' ? [center] : targets.map((t) => ({ x: t.home.x, y: t.chestY }));
+      let impact: Promise<void> | null = null;
+      for (const p of spots) {
+        const b = this.fx.play(fx.burst, this.fxLayer, p.x, p.y, { scale: (fx.burstScale ?? 1.2) * (fx.burstAt === 'center' ? 1 : t0.scale) });
+        if (b) impact ??= b.at(fx.impactFrame ?? 3);
+      }
+      const big = fx.burstAt === 'center' || !!skill.cutin;
+      if (impact) await impact;
+      if (big) {
+        this.screenFlash(color, skill.cutin ? 0.35 : 0.18, 260);
+        this.shake(skill.cutin ? 12 : 7, 360);
+      }
+    } else if (offensive && !moved && !has(fx.proj) && skill.target === 'allEnemies') {
+      await this.aoeWave(targets, color, !!skill.cutin);
+    }
+
+    // 4. Diễn các sự kiện (số sát thương, hồi máu, trạng thái)
     let lastDamageUid = '';
     for (const ev of events.slice(1)) {
       await this.applyEvent(ev, actor);
@@ -496,7 +690,82 @@ export class BattleScene {
       } else if (ev.t === 'heal' || ev.t === 'status' || ev.t === 'cr') await this.tw.wait(40);
     }
     await this.tw.wait(380);
-    if (moved) await this.returnHome(actor);
+    if (moved === 'teleport') await this.teleport(actor, actor.home);
+    else if (moved) await this.returnHome(actor);
+    this.sortUnits();
+    this.curFx = null;
+  }
+
+  /** Hiệu ứng trên đồng đội (hồi máu / tăng sức mạnh / khiên), mỗi người một lần mỗi đòn. */
+  private playAllyFx(v: UnitView, fallback?: string) {
+    if (this.allyFxDone.has(v.unit.uid)) return;
+    const name = this.curFx?.ally ?? fallback;
+    if (!fxLibrary.has(name)) return;
+    this.allyFxDone.add(v.unit.uid);
+    const feet = name === 'fx_heal' || name === 'fx_buff';
+    const loop = fxLibrary.manifest[name]?.loop;
+    this.fx.play(name, this.fxLayer, v.home.x, feet ? v.home.y + 8 : v.chestY, {
+      scale: (this.curFx?.allyScale ?? 1) * v.scale * (feet ? 1.1 : loop ? 0.75 : 1),
+      anchorY: feet ? 0.78 : 0.5,
+      alpha: loop ? 0.7 : 1,
+      // Hiệu ứng lặp (khiên) chỉ loé lên một nhịp; khiên kéo dài do syncStatusFx lo
+      life: loop ? 700 : undefined,
+    });
+  }
+
+  /** Vật bay (quả cầu lửa, Rasenshuriken, cá mập nước) hoặc thiên thạch rơi từ trời. */
+  private async projectileFx(actor: UnitView, fx: SkillFx, dest: { x: number; y: number }) {
+    const fromSky = fx.projFrom === 'sky';
+    const start = fromSky ? { x: dest.x - actor.dir * 420, y: -160 } : { x: actor.home.x + actor.dir * 60, y: actor.chestY };
+    const p = this.fx.play(fx.proj, this.fxLayer, start.x, start.y, {
+      scale: (fx.projScale ?? 1) * (fromSky ? 1 : actor.scale),
+      flipX: actor.dir < 0,
+      persist: true,
+    });
+    if (!p) return;
+    const ms = fx.projMs ?? (fromSky ? 800 : 300);
+    await this.tw.run(ms, (k) => {
+      p.sprite.x = start.x + (dest.x - start.x) * k;
+      p.sprite.y = start.y + (dest.y - start.y) * k - (fromSky ? 0 : Math.sin(k * Math.PI) * 24);
+    }, fromSky ? ease.inQuad : ease.inOutQuad);
+    p.stop(80);
+  }
+
+  /** Phi Lôi Thần: loé sáng ở chỗ cũ, biến mất, xuất hiện tại chỗ mới. */
+  private async teleport(v: UnitView, dest: { x: number; y: number }) {
+    const flash = (x: number, y: number) =>
+      this.fx.play('fx_flash_step', this.fxLayer, x, y - UNIT_H * v.scale * 0.5, { scale: 0.9 * v.scale });
+    flash(v.root.x, v.root.y);
+    this.unitLayer.setChildIndex(v.root, this.unitLayer.children.length - 1);
+    await this.tw.to(v.root, { alpha: 0 }, 70);
+    v.root.position.set(dest.x, dest.y);
+    flash(dest.x, dest.y);
+    await this.tw.to(v.root, { alpha: 1 }, 90);
+  }
+
+  /** Vòng choáng trên đầu, lửa bỏng dưới chân, khiên quanh người: hiện khi còn trạng thái. */
+  private syncStatusFx(v: UnitView) {
+    const m = this.statusFx.get(v.unit.uid) ?? {};
+    const want = {
+      stun: !v.dead && v.unit.statuses.some((s) => s.type === 'stun'),
+      burn: !v.dead && v.unit.statuses.some((s) => s.type === 'burn'),
+      shield: !v.dead && v.unit.statuses.some((s) => s.type === 'shield'),
+    };
+    const conf = {
+      stun: { name: 'fx_stun', scale: 0.42, anchorY: 0.6, alpha: 1 },
+      burn: { name: 'fx_burn', scale: 0.55, anchorY: 0.85, alpha: 0.9 },
+      shield: { name: 'fx_shield', scale: 0.72, anchorY: 0.5, alpha: 0.3 },
+    } as const;
+    for (const k of ['stun', 'burn', 'shield'] as const) {
+      if (want[k] && !m[k]) {
+        const c = conf[k];
+        m[k] = this.fx.play(c.name, this.fxLayer, v.root.x, v.root.y, { scale: c.scale * v.scale, anchorY: c.anchorY, alpha: c.alpha, persist: true }) ?? undefined;
+      } else if (!want[k] && m[k]) {
+        m[k]!.stop(200);
+        delete m[k];
+      }
+    }
+    this.statusFx.set(v.unit.uid, m);
   }
 
   private async applyEvent(ev: BattleEvent, actor?: UnitView) {
@@ -521,8 +790,19 @@ export class BattleScene {
           return;
         }
         this.hitReact(v, ev.crit ? 1.4 : 1);
-        this.slashFx(v.home.x, v.chestY, color);
-        this.burst(v.home.x, v.chestY, color, ev.crit ? 22 : 12, ev.crit ? 0.6 : 0.45);
+        const hit = this.curFx?.hit;
+        if (fxLibrary.has(hit)) {
+          const slashy = hit.startsWith('fx_slash') || hit === 'fx_wind_blades';
+          this.fx.play(hit, this.fxLayer, v.home.x + (Math.random() - 0.5) * 20, v.chestY + (Math.random() - 0.5) * 20, {
+            scale: (this.curFx?.hitScale ?? 1) * v.scale * (ev.crit ? 1.25 : 1),
+            rotation: slashy ? (Math.random() - 0.5) * 0.9 : 0,
+            flipX: v.dir > 0,
+          });
+          this.burst(v.home.x, v.chestY, color, ev.crit ? 12 : 6, ev.crit ? 0.5 : 0.35);
+        } else {
+          this.slashFx(v.home.x, v.chestY, color);
+          this.burst(v.home.x, v.chestY, color, ev.crit ? 22 : 12, ev.crit ? 0.6 : 0.45);
+        }
         if (ev.crit) {
           this.shake(10, 240);
           this.floatText(p.x, p.y - 34, 'CHÍ MẠNG!', { size: 18, color: 0xffd23f, italic: true });
@@ -541,7 +821,8 @@ export class BattleScene {
         v.drawBar();
         const p = this.numberPos(v);
         this.floatText(p.x, p.y, `+${ev.amount}`, { size: 30, color: 0x6dff9a, stroke: 0x0b4020 });
-        this.burst(v.home.x, v.home.y - 20, 0x6dff9a, 12, 0.18, 0.35, this.fxLayer, -0.0009);
+        if (fxLibrary.has('fx_heal')) this.playAllyFx(v, 'fx_heal');
+        else this.burst(v.home.x, v.home.y - 20, 0x6dff9a, 12, 0.18, 0.35, this.fxLayer, -0.0009);
         return;
       }
       case 'status': {
@@ -550,8 +831,15 @@ export class BattleScene {
         const p = this.numberPos(v);
         if (ev.resisted) this.floatText(p.x, p.y, 'KHÁNG', { size: 18, color: 0xcfd6e0 });
         else this.floatText(p.x, p.y, info.name, { size: 18, color: info.buff ? 0x9fd8ff : 0xff8ab8 });
-        if (ev.status === 'stun' && !ev.resisted) this.ringFx(v.home.x, v.home.y - UNIT_H * v.scale - 4, 0xffd23f, 40);
-        if (ev.status === 'shield') this.ringFx(v.home.x, v.home.y - 60, 0xbfe8ff, 80, 500);
+        if (ev.resisted) return;
+        if (info.buff && ev.status !== 'shield') this.playAllyFx(v, 'fx_buff');
+        else if (!info.buff && ev.status !== 'stun' && ev.status !== 'burn' && fxLibrary.has('fx_debuff')) {
+          this.fx.play('fx_debuff', this.fxLayer, v.home.x, v.chestY, { scale: 0.75 * v.scale });
+        }
+        if (ev.status === 'shield') this.playAllyFx(v);
+        if (fxLibrary.has('fx_stun')) this.syncStatusFx(v);
+        else if (ev.status === 'stun') this.ringFx(v.home.x, v.home.y - UNIT_H * v.scale - 4, 0xffd23f, 40);
+        else if (ev.status === 'shield') this.ringFx(v.home.x, v.home.y - 60, 0xbfe8ff, 80, 500);
         return;
       }
       case 'cr': {
@@ -594,7 +882,9 @@ export class BattleScene {
     const gray = new ColorMatrixFilter();
     gray.desaturate();
     v.body.filters = [gray];
-    this.burst(v.home.x, v.chestY, 0xffffff, 20, 0.35, 0.5);
+    if (fxLibrary.has('fx_death_smoke')) this.fx.play('fx_death_smoke', this.fxLayer, v.root.x, v.chestY, { scale: 1.3 * v.scale });
+    else this.burst(v.home.x, v.chestY, 0xffffff, 20, 0.35, 0.5);
+    this.syncStatusFx(v);
     this.tw.to(v.ui, { alpha: 0 }, 300);
     this.tw.to(v.root, { alpha: 0 }, 900, ease.inQuad);
     this.tw.to(v.body, { y: 24 }, 900, ease.inQuad);
@@ -617,6 +907,15 @@ export class BattleScene {
     this.unitLayer.setChildIndex(v.root, this.unitLayer.children.length - 1);
     await this.tw.to(v.root, { x: v.root.x - v.dir * 18 }, 90, ease.outQuad);
     const sx = v.root.x, sy = v.root.y;
+    if (fxLibrary.has('fx_dash_trail')) {
+      const trail = this.fx.play('fx_dash_trail', this.fxLayer, (sx + dest.x) / 2, (sy + dest.y) / 2 - UNIT_H * v.scale * 0.45, {
+        scale: Math.min(2.2, Math.abs(dest.x - sx) / 260) * v.scale,
+        flipX: v.dir < 0,
+        alpha: 0.85,
+        fps: 40,
+      });
+      trail?.sprite.position.set((sx + dest.x) / 2, (sy + dest.y) / 2 - UNIT_H * v.scale * 0.45);
+    }
     let lastGhost = 0;
     await this.tw.run(200, (k) => {
       v.root.x = sx + (dest.x - sx) * k;
@@ -791,6 +1090,7 @@ export class BattleScene {
   destroy() {
     this.destroyed = true;
     this.tw.clear();
+    this.fx.clear();
     try {
       this.app.destroy(true, { children: true });
     } catch {

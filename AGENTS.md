@@ -4,7 +4,7 @@ Webgame "Ninja Đấu Trường": `game/` (React + PixiJS), `server/` (Fastify +
 
 ## Việc đang cần: tạo ảnh
 
-Đọc và làm theo **`docs/ART_BRIEF.md`**: tạo ảnh nền vào `game/public/bg/` và ảnh hiệu ứng kỹ năng vào `game/public/fx/`, đúng tên file trong brief. Không sửa code.
+Đọc và làm theo **`docs/ART_BRIEF.md`**: tạo ảnh nền vào `art/bg/` và spritesheet hiệu ứng vào `art/fx/` (ảnh gốc PNG; game dùng bản WebP do `python tools/build_assets.py` tạo ra), đúng tên file trong brief. Không sửa code.
 
 ## Lệnh kiểm tra (khi có sửa code)
 

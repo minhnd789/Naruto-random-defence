@@ -21,7 +21,7 @@ import numpy as np
 from PIL import Image
 
 ROOT = Path(__file__).resolve().parent.parent
-FX_DIR = ROOT / "game" / "public" / "fx"
+FX_DIR = ROOT / "art" / "fx"
 FRAMES_DIR = ROOT / "art" / "frames"
 CELL = 512
 

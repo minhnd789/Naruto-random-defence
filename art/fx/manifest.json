@@ -1,0 +1,410 @@
+{
+  "_note": "Spritesheet 2048x2048 PNG nền trong suốt, lưới cols x rows, đọc trái→phải, trên→dưới. blend do game quyết định: add = cộng màu (hiệu ứng phát sáng), normal = hoà trộn thường (hiệu ứng tối/đặc). key = màu phông dự phòng khi phải tách nền bằng tools/pack_sheet.py --key.",
+  "fx": {
+    "fx_slash": {
+      "cols": 4,
+      "rows": 4,
+      "frames": 16,
+      "fps": 24,
+      "loop": false,
+      "blend": "add",
+      "key": "#FF00FF"
+    },
+    "fx_slash_x": {
+      "cols": 4,
+      "rows": 4,
+      "frames": 16,
+      "fps": 24,
+      "loop": false,
+      "blend": "add",
+      "key": "#FF00FF"
+    },
+    "fx_impact": {
+      "cols": 4,
+      "rows": 4,
+      "frames": 16,
+      "fps": 24,
+      "loop": false,
+      "blend": "add",
+      "key": "#FF00FF"
+    },
+    "fx_punch_impact": {
+      "cols": 4,
+      "rows": 4,
+      "frames": 16,
+      "fps": 24,
+      "loop": false,
+      "blend": "normal",
+      "key": "#FF00FF"
+    },
+    "fx_dash_trail": {
+      "cols": 4,
+      "rows": 4,
+      "frames": 16,
+      "fps": 24,
+      "loop": false,
+      "blend": "add",
+      "key": "#FF00FF"
+    },
+    "fx_shockwave": {
+      "cols": 4,
+      "rows": 4,
+      "frames": 16,
+      "fps": 24,
+      "loop": false,
+      "blend": "add",
+      "key": "#FF00FF"
+    },
+    "fx_kunai": {
+      "cols": 4,
+      "rows": 4,
+      "frames": 16,
+      "fps": 16,
+      "loop": true,
+      "blend": "normal",
+      "key": "#FF00FF"
+    },
+    "fx_cast_circle": {
+      "cols": 4,
+      "rows": 4,
+      "frames": 16,
+      "fps": 24,
+      "loop": false,
+      "blend": "add",
+      "key": "#FF00FF"
+    },
+    "fx_death_smoke": {
+      "cols": 4,
+      "rows": 4,
+      "frames": 16,
+      "fps": 24,
+      "loop": false,
+      "blend": "normal",
+      "key": "#FF00FF"
+    },
+    "fx_fireball": {
+      "cols": 4,
+      "rows": 4,
+      "frames": 16,
+      "fps": 16,
+      "loop": true,
+      "blend": "add",
+      "key": "#FF00FF"
+    },
+    "fx_fire_burst": {
+      "cols": 4,
+      "rows": 4,
+      "frames": 16,
+      "fps": 24,
+      "loop": false,
+      "blend": "add",
+      "key": "#FF00FF"
+    },
+    "fx_amaterasu": {
+      "cols": 4,
+      "rows": 4,
+      "frames": 16,
+      "fps": 24,
+      "loop": false,
+      "blend": "normal",
+      "key": "#00FF00"
+    },
+    "fx_wind_blades": {
+      "cols": 4,
+      "rows": 4,
+      "frames": 16,
+      "fps": 24,
+      "loop": false,
+      "blend": "add",
+      "key": "#FF00FF"
+    },
+    "fx_rasengan": {
+      "cols": 4,
+      "rows": 4,
+      "frames": 16,
+      "fps": 16,
+      "loop": true,
+      "blend": "add",
+      "key": "#FF00FF"
+    },
+    "fx_rasenshuriken": {
+      "cols": 4,
+      "rows": 4,
+      "frames": 16,
+      "fps": 16,
+      "loop": true,
+      "blend": "add",
+      "key": "#FF00FF"
+    },
+    "fx_wind_explosion": {
+      "cols": 4,
+      "rows": 4,
+      "frames": 16,
+      "fps": 24,
+      "loop": false,
+      "blend": "add",
+      "key": "#FF00FF"
+    },
+    "fx_lightning": {
+      "cols": 4,
+      "rows": 4,
+      "frames": 16,
+      "fps": 24,
+      "loop": false,
+      "blend": "add",
+      "key": "#FF00FF"
+    },
+    "fx_chidori": {
+      "cols": 4,
+      "rows": 4,
+      "frames": 16,
+      "fps": 16,
+      "loop": true,
+      "blend": "add",
+      "key": "#FF00FF"
+    },
+    "fx_sand_burst": {
+      "cols": 4,
+      "rows": 4,
+      "frames": 16,
+      "fps": 24,
+      "loop": false,
+      "blend": "normal",
+      "key": "#FF00FF"
+    },
+    "fx_sand_coffin": {
+      "cols": 4,
+      "rows": 4,
+      "frames": 16,
+      "fps": 24,
+      "loop": false,
+      "blend": "normal",
+      "key": "#FF00FF"
+    },
+    "fx_earth_spikes": {
+      "cols": 4,
+      "rows": 4,
+      "frames": 16,
+      "fps": 24,
+      "loop": false,
+      "blend": "normal",
+      "key": "#FF00FF"
+    },
+    "fx_water_shark": {
+      "cols": 4,
+      "rows": 4,
+      "frames": 16,
+      "fps": 16,
+      "loop": true,
+      "blend": "normal",
+      "key": "#FF00FF"
+    },
+    "fx_water_splash": {
+      "cols": 4,
+      "rows": 4,
+      "frames": 16,
+      "fps": 24,
+      "loop": false,
+      "blend": "normal",
+      "key": "#FF00FF"
+    },
+    "fx_dark_orb": {
+      "cols": 4,
+      "rows": 4,
+      "frames": 16,
+      "fps": 16,
+      "loop": true,
+      "blend": "normal",
+      "key": "#00FF00"
+    },
+    "fx_dark_burst": {
+      "cols": 4,
+      "rows": 4,
+      "frames": 16,
+      "fps": 24,
+      "loop": false,
+      "blend": "normal",
+      "key": "#00FF00"
+    },
+    "fx_meteor": {
+      "cols": 4,
+      "rows": 4,
+      "frames": 16,
+      "fps": 16,
+      "loop": true,
+      "blend": "normal",
+      "key": "#FF00FF"
+    },
+    "fx_meteor_impact": {
+      "cols": 4,
+      "rows": 4,
+      "frames": 16,
+      "fps": 24,
+      "loop": false,
+      "blend": "normal",
+      "key": "#FF00FF"
+    },
+    "fx_light_burst": {
+      "cols": 4,
+      "rows": 4,
+      "frames": 16,
+      "fps": 24,
+      "loop": false,
+      "blend": "add",
+      "key": "#FF00FF"
+    },
+    "fx_flash_step": {
+      "cols": 4,
+      "rows": 4,
+      "frames": 16,
+      "fps": 24,
+      "loop": false,
+      "blend": "add",
+      "key": "#FF00FF"
+    },
+    "fx_susanoo_arrow": {
+      "cols": 4,
+      "rows": 4,
+      "frames": 16,
+      "fps": 16,
+      "loop": true,
+      "blend": "add",
+      "key": "#FF00FF"
+    },
+    "fx_kamui": {
+      "cols": 4,
+      "rows": 4,
+      "frames": 16,
+      "fps": 24,
+      "loop": false,
+      "blend": "normal",
+      "key": "#00FF00"
+    },
+    "fx_tsukuyomi": {
+      "cols": 4,
+      "rows": 4,
+      "frames": 16,
+      "fps": 24,
+      "loop": false,
+      "blend": "add",
+      "key": "#FF00FF"
+    },
+    "fx_crows": {
+      "cols": 4,
+      "rows": 4,
+      "frames": 16,
+      "fps": 24,
+      "loop": false,
+      "blend": "normal",
+      "key": "#00FF00"
+    },
+    "fx_shinra_tensei": {
+      "cols": 4,
+      "rows": 4,
+      "frames": 16,
+      "fps": 24,
+      "loop": false,
+      "blend": "add",
+      "key": "#FF00FF"
+    },
+    "fx_shadow_bind": {
+      "cols": 4,
+      "rows": 4,
+      "frames": 16,
+      "fps": 24,
+      "loop": false,
+      "blend": "normal",
+      "key": "#00FF00"
+    },
+    "fx_twin_lions": {
+      "cols": 4,
+      "rows": 4,
+      "frames": 16,
+      "fps": 24,
+      "loop": false,
+      "blend": "add",
+      "key": "#FF00FF"
+    },
+    "fx_sakura_punch": {
+      "cols": 4,
+      "rows": 4,
+      "frames": 16,
+      "fps": 24,
+      "loop": false,
+      "blend": "normal",
+      "key": "#00FF00"
+    },
+    "fx_eight_gates": {
+      "cols": 4,
+      "rows": 4,
+      "frames": 16,
+      "fps": 16,
+      "loop": true,
+      "blend": "add",
+      "key": "#FF00FF"
+    },
+    "fx_heal": {
+      "cols": 4,
+      "rows": 4,
+      "frames": 16,
+      "fps": 24,
+      "loop": false,
+      "blend": "add",
+      "key": "#FF00FF"
+    },
+    "fx_buff": {
+      "cols": 4,
+      "rows": 4,
+      "frames": 16,
+      "fps": 24,
+      "loop": false,
+      "blend": "add",
+      "key": "#FF00FF"
+    },
+    "fx_debuff": {
+      "cols": 4,
+      "rows": 4,
+      "frames": 16,
+      "fps": 24,
+      "loop": false,
+      "blend": "normal",
+      "key": "#00FF00"
+    },
+    "fx_stun": {
+      "cols": 4,
+      "rows": 4,
+      "frames": 16,
+      "fps": 16,
+      "loop": true,
+      "blend": "add",
+      "key": "#FF00FF"
+    },
+    "fx_shield": {
+      "cols": 4,
+      "rows": 4,
+      "frames": 16,
+      "fps": 16,
+      "loop": true,
+      "blend": "normal",
+      "key": "#FF00FF"
+    },
+    "fx_burn": {
+      "cols": 4,
+      "rows": 4,
+      "frames": 16,
+      "fps": 16,
+      "loop": true,
+      "blend": "add",
+      "key": "#FF00FF"
+    },
+    "fx_level_up": {
+      "cols": 4,
+      "rows": 4,
+      "frames": 16,
+      "fps": 24,
+      "loop": false,
+      "blend": "add",
+      "key": "#FF00FF"
+    }
+  }
+}

@@ -160,6 +160,7 @@ export function Rta({ profile, onBack, topBar }: { profile: Profile; onBack: () 
         enemy={teams.B}
         seed={start.seed}
         mySide={match.you}
+        theme="rta"
         remote={driverRef.current!}
         overlay={<TurnTimer deadline={turnDeadline} match={match} hidden={!!end} />}
         rtaEnd={end ? { ...end, ranked: match.ranked } : null}

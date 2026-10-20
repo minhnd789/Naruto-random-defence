@@ -5,10 +5,10 @@
 > 2. Sprite sheet layout is strict: **2048×2048 PNG, 4 columns × 4 rows = 16 frames, each frame 512×512, read left→right then top→bottom**. The effect must stay centered on the same anchor point in every frame (no drifting camera), and must fit inside each 512×512 cell with ~8% margin (never crosses into a neighbour cell).
 > 2b. **Every effect sheet must have a TRANSPARENT background** (real alpha channel PNG). Ask the image tool explicitly for `transparent background`. Soft glows must fade out through alpha (semi-transparent pixels), not into a black or white fill. Do not paint a checkerboard pattern to imitate transparency.
 >    - Fallback only if the tool returns an opaque image: regenerate on a flat solid chroma color (`#FF00FF` magenta; use `#00FF00` green for pink/purple effects), then run `python tools/pack_sheet.py --key <name> <generated.png>` to cut the background out.
->    - You do NOT need to choose blend modes; `blend` in `game/public/fx/manifest.json` is already set by the game team (glowing effects are drawn additively, dark/solid effects normally).
-> 3. If your image tool cannot produce a clean, evenly spaced 4×4 grid, generate the **16 frames as separate 512×512 images** instead, save them to `art/frames/<name>/01.png … 16.png`, then run `python tools/pack_sheet.py <name>` to assemble `game/public/fx/<name>.png`. Never ship a sheet whose cells are misaligned.
+>    - You do NOT need to choose blend modes; `blend` in `art/fx/manifest.json` is already set by the game team (glowing effects are drawn additively, dark/solid effects normally).
+> 3. If your image tool cannot produce a clean, evenly spaced 4×4 grid, generate the **16 frames as separate 512×512 images** instead, save them to `art/frames/<name>/01.png … 16.png`, then run `python tools/pack_sheet.py <name>` to assemble `art/fx/<name>.png`. Never ship a sheet whose cells are misaligned.
 > 4. After all sheets exist, run `python tools/check_assets.py`. It must print `OK` for every file. Fix any reported problem.
-> 5. If an effect needs a different frame count or speed than the default, edit its entry in `game/public/fx/manifest.json` (`cols`, `rows`, `frames`, `fps`, `loop`). Do not change other fields.
+> 5. If an effect needs a different frame count or speed than the default, edit its entry in `art/fx/manifest.json` (`cols`, `rows`, `frames`, `fps`, `loop`). Do not change other fields.
 > 6. Do **not** modify game source code (`game/src`, `server/src`). Only add images, frames and manifest values.
 > 7. Commit with message `Thêm ảnh nền và spritesheet hiệu ứng` and list any asset you could not produce in the commit body.
 
@@ -18,10 +18,10 @@ Mục tiêu: thay hiệu ứng đòn đánh (hiện chỉ là chấm sáng vẽ 
 
 - **Phong cách:** anime 2D cel-shading kiểu game gacha (Epic Seven, Naruto Storm), màu rực, phát sáng mạnh, nét sạch.
 - **Không nhân vật, không chữ, không logo, không watermark.**
-- **Hiệu ứng (`game/public/fx/`):** spritesheet 2048×2048, lưới 4×4, **nền trong suốt** (PNG có alpha thật, yêu cầu `transparent background`). Quầng sáng mờ dần bằng độ trong suốt, không đổ nền đen hay trắng.
+- **Hiệu ứng (`art/fx/`):** spritesheet 2048×2048, lưới 4×4, **nền trong suốt** (PNG có alpha thật, yêu cầu `transparent background`). Quầng sáng mờ dần bằng độ trong suốt, không đổ nền đen hay trắng.
   - Game tự chọn cách hoà trộn theo `manifest.json`: hiệu ứng phát sáng (lửa, sét, chakra, ánh sáng, vệt chém) được *cộng màu* nên rực hơn; hiệu ứng tối hoặc đặc (lửa đen, quạ, bóng, đá, cát, khói, nước, kim loại) hoà trộn thường.
   - Dự phòng: nếu ảnh xuất ra không có alpha (nền đặc hoặc ô caro giả), vẽ lại trên phông màu đồng nhất `#FF00FF` (hiệu ứng hồng/tím dùng `#00FF00`) rồi chạy `python tools/pack_sheet.py --key <tên> <ảnh>` để tách nền.
-- **Hình nền (`game/public/bg/`):** ảnh 1920×1080. Một phần ba dưới cùng là mặt đất trống, phẳng để đặt 10 nhân vật. Đường chân trời ở khoảng 40% chiều cao tính từ trên xuống.
+- **Hình nền (`art/bg/`):** ảnh 1920×1080. Một phần ba dưới cùng là mặt đất trống, phẳng để đặt 10 nhân vật. Đường chân trời ở khoảng 40% chiều cao tính từ trên xuống.
 - **Đặt đúng tên file như trong bảng.**
 
 ### Hai loại hoạt ảnh
@@ -43,7 +43,7 @@ Glow fades out through transparency. Cel-shaded, vibrant, high contrast, no text
 
 ---
 
-## A. Hình nền chiến đấu: `game/public/bg/` (ảnh đơn)
+## A. Hình nền chiến đấu: `art/bg/` (ảnh đơn)
 
 | File | Dùng cho | Prompt |
 |---|---|---|
@@ -57,7 +57,7 @@ Glow fades out through transparency. Cel-shaded, vibrant, high contrast, no text
 
 ---
 
-## B. Spritesheet hiệu ứng: `game/public/fx/`
+## B. Spritesheet hiệu ứng: `art/fx/`
 
 Tất cả: 2048×2048, lưới 4×4, nền đen. Cột **Loại** cho biết dùng diễn biến *once* hay *loop* ở trên.
 
@@ -130,7 +130,7 @@ Tất cả: 2048×2048, lưới 4×4, nền đen. Cột **Loại** cho biết d�
 
 ## C. Bảng kiểm tra trước khi commit
 
-- [ ] 7 nền trong `game/public/bg/` đúng 1920×1080.
+- [ ] 7 nền trong `art/bg/` đúng 1920×1080.
 - [ ] Mọi file `fx_*.png` đúng 2048×2048, 16 khung căn giữa, không có đường kẻ lưới.
 - [ ] Mọi hiệu ứng có nền trong suốt thật (alpha), không phải ô caro giả, không còn sót màu phông.
 - [ ] Hiệu ứng *once*: khung 16 gần như trong suốt. Hiệu ứng *loop*: khung 16 nối mượt về khung 1.
