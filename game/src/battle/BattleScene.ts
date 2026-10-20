@@ -80,6 +80,10 @@ class UnitView {
   idleTex: Texture;
   poses: Partial<Record<Pose, Texture>> = {};
   pose: Pose | 'idle' = 'idle';
+  /** Co giãn khi lấy đà / tiếp đất (nhân với nhịp thở) và độ nảy khỏi mặt đất (px). */
+  squashX = 1;
+  squashY = 1;
+  hop = 0;
 
   constructor(public unit: Unit, tex: Texture, public mine: boolean) {
     this.home = homeOf(mine, unit.slot);
@@ -135,6 +139,14 @@ class UnitView {
    * Đổi ảnh theo tư thế. Ảnh tư thế được căn theo vạch chân và tỉ lệ đứng thẳng của brief,
    * nên đổi qua lại không bị nhảy vị trí. Trả về false nếu ninja chưa có ảnh tư thế này.
    */
+  /** Bản sao ảnh đang hiện, dùng để mờ dần khi đổi tư thế. */
+  snapshot(): Sprite {
+    const g = new Sprite(this.sprite.texture);
+    g.anchor.copyFrom(this.sprite.anchor);
+    g.scale.copyFrom(this.sprite.scale);
+    return g;
+  }
+
   setPose(p: Pose | 'idle'): boolean {
     if (p === this.pose) return p === 'idle' || !!this.poses[p];
     if (p !== 'idle' && !this.poses[p]) return false;
@@ -359,8 +371,9 @@ export class BattleScene {
     for (const v of this.views.values()) {
       if (v.dead) continue;
       const ph = this.time / 520 + v.unit.slot * 1.3 + (v.mine ? 0 : 2);
-      v.body.scale.y = 1 + Math.sin(ph) * 0.013;
-      v.body.scale.x = 1 - Math.sin(ph) * 0.006;
+      v.body.scale.y = (1 + Math.sin(ph) * 0.013) * v.squashY;
+      v.body.scale.x = (1 - Math.sin(ph) * 0.006) * v.squashX;
+      v.body.y = -v.hop;
       if (v.ring.visible) v.ring.alpha = 0.65 + Math.sin(this.time / 160) * 0.3;
       if (v.marker.visible) v.marker.y = -34 + Math.sin(this.time / 120) * 5;
       if (v.lagHp > v.hp) {
@@ -737,7 +750,13 @@ export class BattleScene {
    */
   private setPose(v: UnitView, p: Pose | 'idle', holdMs?: number) {
     if (v.dead && p !== 'hit') return;
+    const before = v.pose;
+    const old = v.snapshot();
     const real = v.setPose(p);
+    if (real && v.pose !== before) {
+      v.body.addChild(old);
+      this.tw.to(old, { alpha: 0 }, 110, ease.inQuad).then(() => old.destroy());
+    } else old.destroy();
     if (!real) v.setPose('idle');
     const lean = real ? 0 : FAKE_LEAN[p] * v.dir;
     this.tw.to(v.body, { rotation: lean }, p === 'idle' ? 160 : 90, ease.outQuad);
@@ -960,28 +979,35 @@ export class BattleScene {
   private async dash(v: UnitView, dest: { x: number; y: number }) {
     const color = ELEMENT_INFO[v.unit.hero.element].color;
     this.unitLayer.setChildIndex(v.root, this.unitLayer.children.length - 1);
-    await this.tw.to(v.root, { x: v.root.x - v.dir * 18 }, 90, ease.outQuad);
+    // Lấy đà: nhún xuống và lùi nhẹ
+    this.tw.to(v, { squashY: 0.9, squashX: 1.07 }, 100, ease.outQuad);
+    await this.tw.to(v.root, { x: v.root.x - v.dir * 18 }, 100, ease.outQuad);
     this.setPose(v, 'dash');
+    this.tw.to(v, { squashY: 1.05, squashX: 0.96 }, 90, ease.outQuad);
     const sx = v.root.x, sy = v.root.y;
     if (fxLibrary.has('fx_dash_trail')) {
-      const trail = this.fx.play('fx_dash_trail', this.fxLayer, (sx + dest.x) / 2, (sy + dest.y) / 2 - UNIT_H * v.scale * 0.45, {
+      this.fx.play('fx_dash_trail', this.fxLayer, (sx + dest.x) / 2, (sy + dest.y) / 2 - UNIT_H * v.scale * 0.45, {
         scale: Math.min(2.2, Math.abs(dest.x - sx) / 260) * v.scale,
         flipX: v.dir < 0,
         alpha: 0.85,
         fps: 40,
       });
-      trail?.sprite.position.set((sx + dest.x) / 2, (sy + dest.y) / 2 - UNIT_H * v.scale * 0.45);
     }
+    const dist = Math.hypot(dest.x - sx, dest.y - sy);
     let lastGhost = 0;
-    await this.tw.run(200, (k) => {
+    await this.tw.run(Math.min(280, 170 + dist * 0.12), (k) => {
       v.root.x = sx + (dest.x - sx) * k;
       v.root.y = sy + (dest.y - sy) * k;
-      if (k - lastGhost > 0.2 && k < 1) {
+      v.hop = Math.sin(k * Math.PI) * 14 * v.scale;
+      if (k - lastGhost > 0.12 && k < 0.95) {
         lastGhost = k;
         this.ghost(v, color);
       }
-    }, ease.inOutQuad);
+    }, ease.inOutCubic);
+    v.hop = 0;
     this.setPose(v, 'attack');
+    // Chạm đích: nhún rồi bật lại
+    this.tw.to(v, { squashY: 0.93, squashX: 1.05 }, 60, ease.outQuad).then(() => this.tw.to(v, { squashY: 1, squashX: 1 }, 180, ease.outBack));
   }
 
   private ghost(v: UnitView, color: number) {
@@ -997,7 +1023,21 @@ export class BattleScene {
   }
 
   private async returnHome(v: UnitView) {
-    await this.tw.to(v.root, { x: v.home.x, y: v.home.y }, 260, ease.outCubic);
+    const sx = v.root.x, sy = v.root.y;
+    const dist = Math.hypot(v.home.x - sx, v.home.y - sy);
+    if (dist < 3) return this.sortUnits();
+    // Nhún lấy đà rồi bật lên
+    await this.tw.to(v, { squashY: 0.92, squashX: 1.05 }, 70, ease.outQuad);
+    this.tw.to(v, { squashY: 1.04, squashX: 0.97 }, 90, ease.outQuad);
+    await this.tw.run(Math.min(360, 220 + dist * 0.15), (k) => {
+      v.root.x = sx + (v.home.x - sx) * k;
+      v.root.y = sy + (v.home.y - sy) * k;
+      v.hop = Math.sin(k * Math.PI) * Math.min(48, 18 + dist * 0.08) * v.scale;
+    }, ease.inOutQuad);
+    v.hop = 0;
+    // Tiếp đất
+    this.burst(v.home.x, v.home.y - 4, 0xd8c3a0, 8, 0.12, 0.35, this.fxLayer, 0.0004);
+    this.tw.to(v, { squashY: 0.92, squashX: 1.06 }, 60, ease.outQuad).then(() => this.tw.to(v, { squashY: 1, squashX: 1 }, 200, ease.outBack));
     this.sortUnits();
   }
 
