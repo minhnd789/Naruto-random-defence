@@ -1,5 +1,12 @@
 # Brief tạo ảnh cho Codex / ChatGPT
 
+> **Instructions for Codex (agent):**
+> 1. For every row in sections A and B (and C if your image tool supports grids), generate the image with your image-generation tool using the given prompt plus the shared rules below.
+> 2. Save each image as PNG at the exact path and file name listed (`game/public/bg/…`, `game/public/fx/…`). Do not rename, do not use subfolders.
+> 3. Effects (`fx_*`) must be on a pure black `#000000` background. Backgrounds (`bg_*`) must be 1920×1080 with no characters and no text.
+> 4. Do **not** modify any source code (`game/src`, `server/src`). Only add image files.
+> 5. Commit with message `Thêm ảnh nền và hiệu ứng kỹ năng` and list any image you could not generate in the commit body.
+
 Mục tiêu: thay hiệu ứng đòn đánh (hiện chỉ là chấm sáng vẽ bằng code) và hình nền chiến đấu bằng ảnh chất lượng cao.
 Game tự nạp các file dưới đây nếu có. Thiếu file nào thì game dùng hiệu ứng cũ cho file đó, nên có thể làm dần từng phần.
 
