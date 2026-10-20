@@ -5,10 +5,10 @@ Dùng:
   python tools/pack_sheet.py --all                   # ghép mọi thư mục trong art/frames/
   python tools/pack_sheet.py --key fx_crows sheet.png  # tách phông màu của sheet đã vẽ sẵn thành nền trong suốt
 
-Theo manifest (game/public/fx/manifest.json):
-  blend = "add"    → nền đen. Phần trong suốt (nếu có) được đổ đen.
-  blend = "normal" → nền trong suốt thật. Khung có alpha thì giữ nguyên; khung vẽ trên phông
-                     màu `key` (mặc định #FF00FF) thì phông được tách thành trong suốt, viền ám màu được khử.
+Kết quả luôn là PNG nền trong suốt:
+  - Khung đã có alpha thật → giữ nguyên.
+  - Khung nền đen (cách làm cũ cho hiệu ứng phát sáng) → độ sáng đổi thành độ đục, quầng sáng giữ được độ mềm.
+  - Khung trên phông màu (mặc định #FF00FF, hoặc `key` trong manifest) → tách phông, khử viền ám màu.
 """
 import json
 import sys
@@ -64,21 +64,32 @@ def has_alpha(im: Image.Image) -> bool:
     return im.mode in ("RGBA", "LA") and np.asarray(im.getchannel("A")).min() < 250
 
 
+def black_to_alpha(im: Image.Image) -> Image.Image:
+    """Ảnh phát sáng trên nền đen → nền trong suốt: độ đục = kênh sáng nhất, màu được "khử nhân" lại."""
+    rgb = np.asarray(im.convert("RGB")).astype(np.float32)
+    a = rgb.max(axis=-1)
+    safe = np.maximum(a, 1)[..., None]
+    out = np.dstack([np.clip(rgb / safe * 255, 0, 255), a]).astype(np.uint8)
+    return Image.fromarray(out, "RGBA")
+
+
 def prepare_frame(im: Image.Image, meta: dict) -> Image.Image:
-    if meta["blend"] == "normal":
-        return im.convert("RGBA") if has_alpha(im) else key_out(im, meta["key"])
-    im = im.convert("RGBA")
-    return Image.alpha_composite(Image.new("RGBA", im.size, (0, 0, 0, 255)), im)
+    if has_alpha(im):
+        return im.convert("RGBA")
+    rgb = np.asarray(im.convert("RGB")).astype(np.float32)
+    corners = np.array([rgb[2, 2], rgb[2, -3], rgb[-3, 2], rgb[-3, -3]])
+    if corners.max() < 24:  # nền đen
+        return black_to_alpha(im)
+    return key_out(im, meta["key"])
 
 
 def new_sheet(meta: dict) -> Image.Image:
-    bg = (0, 0, 0, 0) if meta["blend"] == "normal" else (0, 0, 0, 255)
-    return Image.new("RGBA", (meta["cols"] * CELL, meta["rows"] * CELL), bg)
+    return Image.new("RGBA", (meta["cols"] * CELL, meta["rows"] * CELL), (0, 0, 0, 0))
 
 
 def save(sheet: Image.Image, name: str, meta: dict) -> Path:
     out = FX_DIR / f"{name}.png"
-    (sheet if meta["blend"] == "normal" else sheet.convert("RGB")).save(out, optimize=True)
+    sheet.save(out, optimize=True)
     return out
 
 

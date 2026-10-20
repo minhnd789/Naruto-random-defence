@@ -4,9 +4,8 @@ Dùng: python tools/check_assets.py
 Kiểm tra:
   - bg_*.png: đúng 1920x1080.
   - fx_*.png: đúng kích thước lưới theo manifest (mặc định 2048x2048, 4x4 ô 512).
-  - blend=add: nền đen, viền ngoài mỗi ô gần như đen (hiệu ứng không tràn sang ô bên cạnh).
-  - blend=normal: có kênh alpha thật, viền mỗi ô trong suốt, không còn sót màu phông,
-    không phải ô caro "giả trong suốt" do trình tạo ảnh vẽ vào.
+  - Mọi hiệu ứng: có kênh alpha thật, viền mỗi ô trong suốt (không tràn sang ô bên cạnh),
+    không còn sót màu phông, không phải ô caro "giả trong suốt" do trình tạo ảnh vẽ vào.
   - Hiệu ứng "once": khung cuối tối hơn rõ rệt so với khung sáng nhất.
   - Hiệu ứng "loop": khung cuối gần giống khung đầu (nối mượt).
 In OK / LỖI cho từng file, và danh sách file còn thiếu so với manifest.
@@ -35,7 +34,7 @@ def brightness(im: Image.Image) -> float:
 def check_transparent(raw: Image.Image, meta: dict, cells_alpha: list) -> list[str]:
     errs = []
     if raw.mode not in ("RGBA", "LA") or np.asarray(raw.getchannel("A")).min() > 250:
-        return ["blend=normal nhưng ảnh không có nền trong suốt thật (có thể là ô caro giả). Hãy vẽ trên phông màu rồi chạy tools/pack_sheet.py --key"]
+        return ["ảnh không có nền trong suốt thật (nền đặc hoặc ô caro giả). Tạo lại với transparent background, hoặc chạy tools/pack_sheet.py --key"]
     for i, a in enumerate(cells_alpha):
         edge = max(a[:6].mean(), a[-6:].mean(), a[:, :6].mean(), a[:, -6:].mean())
         if edge > 10:
@@ -58,35 +57,23 @@ def check_fx(path: Path, meta: dict) -> list[str]:
     if im.size != (cols * CELL, rows * CELL):
         return [f"kích thước {im.size}, cần {(cols * CELL, rows * CELL)}"]
     boxes = [((i % cols) * CELL, (i // cols) * CELL, (i % cols + 1) * CELL, (i // cols + 1) * CELL) for i in range(count)]
-    if meta.get("blend") == "normal":
-        alpha = raw.convert("RGBA").getchannel("A")
-        cells_alpha = [np.asarray(alpha.crop(b)).astype(np.float32) for b in boxes]
-        errs += check_transparent(raw, meta, cells_alpha)
-        # Độ "sáng" của khung = độ phủ alpha, dùng cho kiểm tra once/loop bên dưới
-        cells = [alpha.crop(b).convert("RGB") for b in boxes]
-    else:
-        cells = [im.crop(b) for b in boxes]
-    # blend=add: viền 6px quanh mỗi ô phải gần đen
-    for i, c in enumerate(cells if meta.get("blend") != "normal" else []):
-        edge = max(
-            brightness(c.crop((0, 0, CELL, 6))),
-            brightness(c.crop((0, CELL - 6, CELL, CELL))),
-            brightness(c.crop((0, 0, 6, CELL))),
-            brightness(c.crop((CELL - 6, 0, CELL, CELL))),
-        )
-        if edge > 18:
-            errs.append(f"khung {i + 1}: hiệu ứng chạm/tràn mép ô (độ sáng viền {edge:.0f})")
-            break
+    alpha = raw.convert("RGBA").getchannel("A")
+    cells_alpha = [np.asarray(alpha.crop(b)).astype(np.float32) for b in boxes]
+    errs += check_transparent(raw, meta, cells_alpha)
+    if errs and "không có nền trong suốt" in errs[0]:
+        return errs
+    # Độ "hiện" của mỗi khung = độ phủ alpha, dùng cho kiểm tra once/loop bên dưới
+    cells = [alpha.crop(b).convert("RGB") for b in boxes]
     lum = [brightness(c) for c in cells]
     if max(lum) < 4:
-        errs.append("mọi khung gần như đen, không thấy hiệu ứng")
+        errs.append("mọi khung gần như trong suốt, không thấy hiệu ứng")
     elif meta.get("loop"):
         diff = brightness(ImageChops.difference(cells[0], cells[-1]))
         if diff > 25:
             errs.append(f"loop không mượt: khung cuối khác khung đầu quá nhiều ({diff:.0f})")
     else:
         if lum[-1] > max(lum) * 0.5:
-            errs.append(f"once: khung cuối chưa tan đủ (sáng {lum[-1]:.0f} so với đỉnh {max(lum):.0f})")
+            errs.append(f"once: khung cuối chưa tan đủ (độ phủ {lum[-1]:.0f} so với đỉnh {max(lum):.0f})")
     return errs
 
 

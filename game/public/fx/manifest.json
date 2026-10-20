@@ -1,5 +1,5 @@
 {
-  "_note": "Spritesheet 2048x2048, lưới cols x rows, đọc trái→phải, trên→dưới. blend=add: nền đen #000000 (hiệu ứng phát sáng). blend=normal: PNG nền trong suốt thật; nếu công cụ không xuất được alpha thì vẽ trên phông màu 'key' rồi chạy tools/pack_sheet.py để tách nền.",
+  "_note": "Spritesheet 2048x2048 PNG nền trong suốt, lưới cols x rows, đọc trái→phải, trên→dưới. blend do game quyết định: add = cộng màu (hiệu ứng phát sáng), normal = hoà trộn thường (hiệu ứng tối/đặc). key = màu phông dự phòng khi phải tách nền bằng tools/pack_sheet.py --key.",
   "fx": {
     "fx_slash": {
       "cols": 4,
@@ -7,7 +7,8 @@
       "frames": 16,
       "fps": 24,
       "loop": false,
-      "blend": "add"
+      "blend": "add",
+      "key": "#FF00FF"
     },
     "fx_slash_x": {
       "cols": 4,
@@ -15,7 +16,8 @@
       "frames": 16,
       "fps": 24,
       "loop": false,
-      "blend": "add"
+      "blend": "add",
+      "key": "#FF00FF"
     },
     "fx_impact": {
       "cols": 4,
@@ -23,7 +25,8 @@
       "frames": 16,
       "fps": 24,
       "loop": false,
-      "blend": "add"
+      "blend": "add",
+      "key": "#FF00FF"
     },
     "fx_punch_impact": {
       "cols": 4,
@@ -40,7 +43,8 @@
       "frames": 16,
       "fps": 24,
       "loop": false,
-      "blend": "add"
+      "blend": "add",
+      "key": "#FF00FF"
     },
     "fx_shockwave": {
       "cols": 4,
@@ -48,7 +52,8 @@
       "frames": 16,
       "fps": 24,
       "loop": false,
-      "blend": "add"
+      "blend": "add",
+      "key": "#FF00FF"
     },
     "fx_kunai": {
       "cols": 4,
@@ -65,7 +70,8 @@
       "frames": 16,
       "fps": 24,
       "loop": false,
-      "blend": "add"
+      "blend": "add",
+      "key": "#FF00FF"
     },
     "fx_death_smoke": {
       "cols": 4,
@@ -82,7 +88,8 @@
       "frames": 16,
       "fps": 16,
       "loop": true,
-      "blend": "add"
+      "blend": "add",
+      "key": "#FF00FF"
     },
     "fx_fire_burst": {
       "cols": 4,
@@ -90,7 +97,8 @@
       "frames": 16,
       "fps": 24,
       "loop": false,
-      "blend": "add"
+      "blend": "add",
+      "key": "#FF00FF"
     },
     "fx_amaterasu": {
       "cols": 4,
@@ -107,7 +115,8 @@
       "frames": 16,
       "fps": 24,
       "loop": false,
-      "blend": "add"
+      "blend": "add",
+      "key": "#FF00FF"
     },
     "fx_rasengan": {
       "cols": 4,
@@ -115,7 +124,8 @@
       "frames": 16,
       "fps": 16,
       "loop": true,
-      "blend": "add"
+      "blend": "add",
+      "key": "#FF00FF"
     },
     "fx_rasenshuriken": {
       "cols": 4,
@@ -123,7 +133,8 @@
       "frames": 16,
       "fps": 16,
       "loop": true,
-      "blend": "add"
+      "blend": "add",
+      "key": "#FF00FF"
     },
     "fx_wind_explosion": {
       "cols": 4,
@@ -131,7 +142,8 @@
       "frames": 16,
       "fps": 24,
       "loop": false,
-      "blend": "add"
+      "blend": "add",
+      "key": "#FF00FF"
     },
     "fx_lightning": {
       "cols": 4,
@@ -139,7 +151,8 @@
       "frames": 16,
       "fps": 24,
       "loop": false,
-      "blend": "add"
+      "blend": "add",
+      "key": "#FF00FF"
     },
     "fx_chidori": {
       "cols": 4,
@@ -147,7 +160,8 @@
       "frames": 16,
       "fps": 16,
       "loop": true,
-      "blend": "add"
+      "blend": "add",
+      "key": "#FF00FF"
     },
     "fx_sand_burst": {
       "cols": 4,
@@ -236,7 +250,8 @@
       "frames": 16,
       "fps": 24,
       "loop": false,
-      "blend": "add"
+      "blend": "add",
+      "key": "#FF00FF"
     },
     "fx_flash_step": {
       "cols": 4,
@@ -244,7 +259,8 @@
       "frames": 16,
       "fps": 24,
       "loop": false,
-      "blend": "add"
+      "blend": "add",
+      "key": "#FF00FF"
     },
     "fx_susanoo_arrow": {
       "cols": 4,
@@ -252,7 +268,8 @@
       "frames": 16,
       "fps": 16,
       "loop": true,
-      "blend": "add"
+      "blend": "add",
+      "key": "#FF00FF"
     },
     "fx_kamui": {
       "cols": 4,
@@ -269,7 +286,8 @@
       "frames": 16,
       "fps": 24,
       "loop": false,
-      "blend": "add"
+      "blend": "add",
+      "key": "#FF00FF"
     },
     "fx_crows": {
       "cols": 4,
@@ -286,7 +304,8 @@
       "frames": 16,
       "fps": 24,
       "loop": false,
-      "blend": "add"
+      "blend": "add",
+      "key": "#FF00FF"
     },
     "fx_shadow_bind": {
       "cols": 4,
@@ -303,7 +322,8 @@
       "frames": 16,
       "fps": 24,
       "loop": false,
-      "blend": "add"
+      "blend": "add",
+      "key": "#FF00FF"
     },
     "fx_sakura_punch": {
       "cols": 4,
@@ -320,7 +340,8 @@
       "frames": 16,
       "fps": 16,
       "loop": true,
-      "blend": "add"
+      "blend": "add",
+      "key": "#FF00FF"
     },
     "fx_heal": {
       "cols": 4,
@@ -328,7 +349,8 @@
       "frames": 16,
       "fps": 24,
       "loop": false,
-      "blend": "add"
+      "blend": "add",
+      "key": "#FF00FF"
     },
     "fx_buff": {
       "cols": 4,
@@ -336,7 +358,8 @@
       "frames": 16,
       "fps": 24,
       "loop": false,
-      "blend": "add"
+      "blend": "add",
+      "key": "#FF00FF"
     },
     "fx_debuff": {
       "cols": 4,
@@ -353,7 +376,8 @@
       "frames": 16,
       "fps": 16,
       "loop": true,
-      "blend": "add"
+      "blend": "add",
+      "key": "#FF00FF"
     },
     "fx_shield": {
       "cols": 4,
@@ -361,7 +385,8 @@
       "frames": 16,
       "fps": 16,
       "loop": true,
-      "blend": "add"
+      "blend": "add",
+      "key": "#FF00FF"
     },
     "fx_burn": {
       "cols": 4,
@@ -369,7 +394,8 @@
       "frames": 16,
       "fps": 16,
       "loop": true,
-      "blend": "add"
+      "blend": "add",
+      "key": "#FF00FF"
     },
     "fx_level_up": {
       "cols": 4,
@@ -377,7 +403,8 @@
       "frames": 16,
       "fps": 24,
       "loop": false,
-      "blend": "add"
+      "blend": "add",
+      "key": "#FF00FF"
     }
   }
 }
