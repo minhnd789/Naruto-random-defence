@@ -6,6 +6,7 @@ import { BattleEvent, SkillDef, StatusType, Unit } from '../engine/types';
 import { HORIZON, STAGE_H, STAGE_W, makeBackdrop, makeGlowTexture, makeStreakTexture } from './backdrop';
 import { SkillFx, fxNeeded, skillFx } from './skillFx';
 import { Tweener, ease } from './tween';
+import { FAKE_LEAN, Pose, poseLibrary } from './poses';
 import { FxInstance, FxPlayer, fxLibrary } from './vfx';
 
 export type BattleTheme = 'konoha' | 'forest' | 'rain' | 'valley' | 'desert' | 'arena' | 'rta';
@@ -76,6 +77,9 @@ class UnitView {
   targetable = false;
   dead = false;
   numStack = 0;
+  idleTex: Texture;
+  poses: Partial<Record<Pose, Texture>> = {};
+  pose: Pose | 'idle' = 'idle';
 
   constructor(public unit: Unit, tex: Texture, public mine: boolean) {
     this.home = homeOf(mine, unit.slot);
@@ -90,10 +94,9 @@ class UnitView {
     this.ring.ellipse(0, 0, 66 * this.scale, 17 * this.scale).fill({ color: elColor, alpha: 0.18 });
     this.ring.visible = false;
 
+    this.idleTex = tex;
     this.sprite = new Sprite(tex);
-    this.sprite.anchor.set(0.5, 1);
-    const s = (UNIT_H * this.scale) / tex.height;
-    this.sprite.scale.set(mine ? s : -s, s);
+    this.applyTexture('idle');
     this.sprite.eventMode = 'static';
     this.sprite.cursor = 'default';
     this.body.addChild(this.sprite);
@@ -126,6 +129,33 @@ class UnitView {
     this.ui.addChild(this.marker);
     this.root.addChild(this.ui);
     this.drawBar();
+  }
+
+  /**
+   * Đổi ảnh theo tư thế. Ảnh tư thế được căn theo vạch chân và tỉ lệ đứng thẳng của brief,
+   * nên đổi qua lại không bị nhảy vị trí. Trả về false nếu ninja chưa có ảnh tư thế này.
+   */
+  setPose(p: Pose | 'idle'): boolean {
+    if (p === this.pose) return p === 'idle' || !!this.poses[p];
+    if (p !== 'idle' && !this.poses[p]) return false;
+    this.pose = p;
+    this.applyTexture(p);
+    return true;
+  }
+
+  private applyTexture(p: Pose | 'idle') {
+    const tex = p === 'idle' ? this.idleTex : this.poses[p]!;
+    this.sprite.texture = tex;
+    let s: number;
+    if (p === 'idle') {
+      this.sprite.anchor.set(0.5, 1);
+      s = (UNIT_H * this.scale) / tex.height;
+    } else {
+      this.sprite.anchor.set(0.5, poseLibrary.feet);
+      s = (UNIT_H * this.scale) / (tex.height * poseLibrary.stand);
+    }
+    // Ảnh tư thế vẽ quay sang phải, giống ảnh gốc của phe bên trái
+    this.sprite.scale.set(this.mine ? s : -s, s);
   }
 
   get chestY() {
@@ -248,10 +278,11 @@ export class BattleScene {
     const urls = [...new Set(battle.units.map((u) => heroUrl(u.hero.image)))];
     const skills = battle.units.flatMap((u) => u.hero.skills.map((skill) => ({ skill, element: u.hero.element })));
     // Tải song song: ảnh nhân vật, spritesheet hiệu ứng cần cho trận này, ảnh nền
-    const [loaded, , bgTex] = await Promise.all([
+    const [loaded, , bgTex, poseMap] = await Promise.all([
       Assets.load(urls),
       fxLibrary.load(fxNeeded(skills)),
       Assets.load<Texture>(`/bg/bg_${this.theme}.webp`).catch(() => null),
+      poseLibrary.load(battle.units.map((u) => u.hero.id)),
     ]);
     for (const u of urls) this.textures.set(u, loaded[u]);
 
@@ -265,6 +296,7 @@ export class BattleScene {
 
     for (const u of battle.units) {
       const v = new UnitView(u, this.textures.get(heroUrl(u.hero.image))!, u.team === this.mySide);
+      v.poses = poseMap.get(u.hero.id) ?? {};
       v.sprite.on('pointertap', () => this.onUnitClick?.(u.uid));
       v.sprite.on('pointerover', () => {
         if (v.targetable) v.sprite.alpha = 0.85;
@@ -649,6 +681,7 @@ export class BattleScene {
         hold.stop(100);
       }
     } else if (offensive) {
+      this.setPose(actor, 'cast');
       if (!has(fx.cast)) await this.castAnim(actor, color);
       else {
         this.tw.to(actor.root, { x: actor.home.x + actor.dir * 22 }, 130, ease.outQuad).then(() => this.tw.to(actor.root, { x: actor.home.x }, 280, ease.outCubic));
@@ -657,6 +690,7 @@ export class BattleScene {
       else if (!has(fx.burst) && skill.target === 'enemy') await this.projectile(actor, t0, color);
     } else {
       // Hỗ trợ: hiệu ứng trên từng đồng đội
+      this.setPose(actor, 'cast');
       if (!has(fx.cast)) await this.castAnim(actor, color);
       for (const t of targets) this.playAllyFx(t);
       await this.tw.wait(260);
@@ -690,10 +724,28 @@ export class BattleScene {
       } else if (ev.t === 'heal' || ev.t === 'status' || ev.t === 'cr') await this.tw.wait(40);
     }
     await this.tw.wait(380);
+    this.setPose(actor, 'idle');
     if (moved === 'teleport') await this.teleport(actor, actor.home);
     else if (moved) await this.returnHome(actor);
     this.sortUnits();
     this.curFx = null;
+  }
+
+  /**
+   * Đổi tư thế nhân vật. Chưa có ảnh tư thế thì nghiêng thân ảnh gốc để giả.
+   * holdMs: tự quay về thế đứng sau khoảng thời gian này.
+   */
+  private setPose(v: UnitView, p: Pose | 'idle', holdMs?: number) {
+    if (v.dead && p !== 'hit') return;
+    const real = v.setPose(p);
+    if (!real) v.setPose('idle');
+    const lean = real ? 0 : FAKE_LEAN[p] * v.dir;
+    this.tw.to(v.body, { rotation: lean }, p === 'idle' ? 160 : 90, ease.outQuad);
+    if (holdMs) {
+      this.tw.wait(holdMs).then(() => {
+        if (!v.dead && (v.pose === p || (p !== 'idle' && !real && Math.abs(v.body.rotation - lean) < 0.01))) this.setPose(v, 'idle');
+      });
+    }
   }
 
   /** Hiệu ứng trên đồng đội (hồi máu / tăng sức mạnh / khiên), mỗi người một lần mỗi đòn. */
@@ -739,6 +791,7 @@ export class BattleScene {
     this.unitLayer.setChildIndex(v.root, this.unitLayer.children.length - 1);
     await this.tw.to(v.root, { alpha: 0 }, 70);
     v.root.position.set(dest.x, dest.y);
+    this.setPose(v, dest === v.home ? 'idle' : 'attack');
     flash(dest.x, dest.y);
     await this.tw.to(v.root, { alpha: 1 }, 90);
   }
@@ -867,6 +920,7 @@ export class BattleScene {
   }
 
   private hitReact(v: UnitView, power: number) {
+    if (v.pose === 'idle' || v.pose === 'hit') this.setPose(v, 'hit', 280);
     v.body.filters = [v.flash];
     v.flash.brightness(2.4, false);
     this.tw.wait(90).then(() => {
@@ -876,6 +930,7 @@ export class BattleScene {
   }
 
   private deathAnim(v: UnitView) {
+    this.setPose(v, 'hit');
     v.dead = true;
     v.ring.visible = false;
     v.marker.visible = false;
@@ -906,6 +961,7 @@ export class BattleScene {
     const color = ELEMENT_INFO[v.unit.hero.element].color;
     this.unitLayer.setChildIndex(v.root, this.unitLayer.children.length - 1);
     await this.tw.to(v.root, { x: v.root.x - v.dir * 18 }, 90, ease.outQuad);
+    this.setPose(v, 'dash');
     const sx = v.root.x, sy = v.root.y;
     if (fxLibrary.has('fx_dash_trail')) {
       const trail = this.fx.play('fx_dash_trail', this.fxLayer, (sx + dest.x) / 2, (sy + dest.y) / 2 - UNIT_H * v.scale * 0.45, {
@@ -925,11 +981,12 @@ export class BattleScene {
         this.ghost(v, color);
       }
     }, ease.inOutQuad);
+    this.setPose(v, 'attack');
   }
 
   private ghost(v: UnitView, color: number) {
     const g = new Sprite(v.sprite.texture);
-    g.anchor.set(0.5, 1);
+    g.anchor.copyFrom(v.sprite.anchor);
     g.scale.copyFrom(v.sprite.scale);
     g.position.set(v.root.x, v.root.y);
     g.tint = color;
@@ -1032,7 +1089,7 @@ export class BattleScene {
     });
 
     // Chân dung lớn
-    const tex = v.sprite.texture;
+    const tex = v.idleTex;
     const portrait = new Sprite(tex);
     const ph = 1150;
     const ps = ph / tex.height;

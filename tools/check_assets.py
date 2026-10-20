@@ -24,6 +24,11 @@ ROOT = Path(__file__).resolve().parent.parent
 FX = ROOT / "art" / "fx"
 BG = ROOT / "art" / "bg"
 CELL = 512
+POSES_DIR = ROOT / "art" / "poses"
+POSE_NAMES = ["dash", "attack", "cast", "hit"]
+POSE_SIZE = (1024, 1536)
+POSE_FEET = 0.96   # chân chạm vạch này (tỉ lệ chiều cao)
+POSE_STAND = 0.80  # chiều cao đứng thẳng (tỉ lệ chiều cao ảnh)
 BACKGROUNDS = ["bg_konoha", "bg_forest", "bg_rain", "bg_valley", "bg_desert", "bg_arena", "bg_rta"]
 
 
@@ -77,6 +82,62 @@ def check_fx(path: Path, meta: dict) -> list[str]:
     return errs
 
 
+def check_pose(path: Path) -> list[str]:
+    errs = []
+    raw = Image.open(path)
+    if raw.size != POSE_SIZE:
+        return [f"kích thước {raw.size}, cần {POSE_SIZE}"]
+    if raw.mode not in ("RGBA", "LA") or np.asarray(raw.getchannel("A")).min() > 250:
+        return ["không có nền trong suốt thật (nền đặc hoặc ô caro giả)"]
+    a = np.asarray(raw.convert("RGBA").getchannel("A")) > 40
+    rows = np.where(a.any(axis=1))[0]
+    cols = np.where(a.any(axis=0))[0]
+    if not len(rows):
+        return ["ảnh trống"]
+    h, w = POSE_SIZE[1], POSE_SIZE[0]
+    bottom = rows[-1] / h
+    if not (POSE_FEET - 0.03 <= bottom <= POSE_FEET + 0.025):
+        errs.append(f"chân ở {bottom:.0%} chiều cao, cần ~{POSE_FEET:.0%}")
+    ys, xs = np.nonzero(a)
+    cx = xs.mean() / w
+    if not (0.35 <= cx <= 0.65):
+        errs.append(f"trọng tâm lệch ngang ({cx:.0%}), cần gần 50%")
+    if cols[0] < 4 or cols[-1] > w - 5 or rows[0] < 4:
+        errs.append("nhân vật chạm mép ảnh (bị cắt)")
+    height = (rows[-1] - rows[0]) / h
+    if height > POSE_STAND + 0.12:
+        errs.append(f"nhân vật quá to (cao {height:.0%} ảnh, tối đa ~{POSE_STAND + 0.1:.0%})")
+    return errs
+
+
+def main_poses() -> int:
+    bad = 0
+    if not POSES_DIR.exists():
+        print("Chưa có thư mục art/poses")
+        return 0
+    for hero in sorted(p for p in POSES_DIR.iterdir() if p.is_dir()):
+        heights = {}
+        for pose in POSE_NAMES:
+            f = hero / f"{pose}.png"
+            if not f.exists():
+                print(f"THIẾU {hero.name}/{pose}.png")
+                continue
+            errs = check_pose(f)
+            bad += bool(errs)
+            print(("OK   " if not errs else "LỖI ") + f"{hero.name}/{pose}.png" + ("" if not errs else ": " + "; ".join(errs)))
+            a = np.asarray(Image.open(f).convert("RGBA").getchannel("A")) > 40
+            r = np.where(a.any(axis=1))[0]
+            if len(r):
+                # Bề rộng phần đầu (12% chiều cao trên cùng của nhân vật) để so tỉ lệ giữa các tư thế
+                top = a[r[0] : r[0] + int(0.1 * POSE_SIZE[1])]
+                c = np.where(top.any(axis=0))[0]
+                heights[pose] = (c[-1] - c[0]) if len(c) else 0
+        vals = [v for v in heights.values() if v]
+        if len(vals) >= 2 and max(vals) > 1.6 * min(vals):
+            print(f"CẢNH BÁO {hero.name}: kích thước đầu giữa các tư thế chênh nhiều ({heights}), có thể sai tỉ lệ")
+    return 1 if bad else 0
+
+
 def main() -> int:
     manifest = json.loads((FX / "manifest.json").read_text(encoding="utf-8"))["fx"]
     bad = 0
@@ -106,4 +167,4 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    sys.exit(main_poses() if "--poses" in sys.argv else main())
