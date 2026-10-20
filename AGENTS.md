@@ -2,9 +2,11 @@
 
 Webgame "Ninja Đấu Trường": `game/` (React + PixiJS), `server/` (Fastify + PostgreSQL/PGlite). Xem `README.md`.
 
-## Việc đang cần: ảnh tư thế nhân vật (đợt thử 4 ninja)
+## Ảnh tư thế nhân vật
 
-Đọc và làm theo **`docs/POSE_BRIEF.md`**: vẽ 4 tư thế (dash, attack, cast, hit) cho Naruto, Sasuke, Gaara, Sakura vào `art/poses/<hero_id>/<pose>.png`. Kiểm tra bằng `python tools/check_assets.py --poses`, rồi chạy `python tools/build_assets.py` và commit cả bản WebP trong `game/public/poses/`. Không sửa code.
+Theo **`docs/POSE_BRIEF.md`**: 4 tư thế (dash, attack, cast, hit) mỗi ninja, lưu `art/poses/<hero_id>/<pose>.png`. Sau khi vẽ: `python tools/normalize_poses.py <hero_id>` (căn khung) → `python tools/check_assets.py --poses` → `python tools/build_assets.py`, commit cả bản WebP trong `game/public/poses/`. Không sửa code.
+
+Đã có: naruto_sage, sasuke_ems, gaara, sakura.
 
 ## Đã xong
 

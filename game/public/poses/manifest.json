@@ -1,5 +1,30 @@
 {
  "feet": 0.96,
  "stand": 0.8,
- "heroes": {}
+ "heroes": {
+  "gaara": [
+   "attack",
+   "cast",
+   "dash",
+   "hit"
+  ],
+  "naruto_sage": [
+   "attack",
+   "cast",
+   "dash",
+   "hit"
+  ],
+  "sakura": [
+   "attack",
+   "cast",
+   "dash",
+   "hit"
+  ],
+  "sasuke_ems": [
+   "attack",
+   "cast",
+   "dash",
+   "hit"
+  ]
+ }
 }

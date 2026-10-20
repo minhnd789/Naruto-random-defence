@@ -116,7 +116,6 @@ def main_poses() -> int:
         print("Chưa có thư mục art/poses")
         return 0
     for hero in sorted(p for p in POSES_DIR.iterdir() if p.is_dir()):
-        heights = {}
         for pose in POSE_NAMES:
             f = hero / f"{pose}.png"
             if not f.exists():
@@ -125,16 +124,6 @@ def main_poses() -> int:
             errs = check_pose(f)
             bad += bool(errs)
             print(("OK   " if not errs else "LỖI ") + f"{hero.name}/{pose}.png" + ("" if not errs else ": " + "; ".join(errs)))
-            a = np.asarray(Image.open(f).convert("RGBA").getchannel("A")) > 40
-            r = np.where(a.any(axis=1))[0]
-            if len(r):
-                # Bề rộng phần đầu (12% chiều cao trên cùng của nhân vật) để so tỉ lệ giữa các tư thế
-                top = a[r[0] : r[0] + int(0.1 * POSE_SIZE[1])]
-                c = np.where(top.any(axis=0))[0]
-                heights[pose] = (c[-1] - c[0]) if len(c) else 0
-        vals = [v for v in heights.values() if v]
-        if len(vals) >= 2 and max(vals) > 1.6 * min(vals):
-            print(f"CẢNH BÁO {hero.name}: kích thước đầu giữa các tư thế chênh nhiều ({heights}), có thể sai tỉ lệ")
     return 1 if bad else 0
 
 

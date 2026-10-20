@@ -9,7 +9,8 @@
 >    - The body's center of gravity is at the **horizontal center** (x ≈ 512 px).
 >    - Scale: if the character stood upright, head-to-feet would be **~80% of the image height** (≈ 1230 px). Keep this scale in every pose, even when crouching or lunging (a crouching pose is simply shorter).
 > 4. Save to `art/poses/<hero_id>/<pose>.png` (e.g. `art/poses/naruto_sage/attack.png`). Lower-case ids exactly as in the table.
-> 5. Run `python tools/check_assets.py --poses`. Every file must print `OK`. Then run `python tools/build_assets.py` to produce the game versions.
+> 5. Image tools usually draw the character too big and with feet at varying heights. Run `python tools/normalize_poses.py <hero_id>` to fix framing automatically (one shared scale per hero, feet on the 96% line, centered on the feet; originals are backed up in `art/poses_raw/`). If a hero still looks bigger/smaller than its reference in game, rerun with `--scale <hero_id>=0.95` (or 1.05).
+> 5b. Run `python tools/check_assets.py --poses`. Every file must print `OK`. Then run `python tools/build_assets.py` to produce the game versions.
 > 6. If the image tool refuses a character (copyright policy), skip it, and list it in the commit body with the refusal reason. Do not substitute a different-looking character.
 > 7. Do **not** modify game source code. Commit with message `Thêm ảnh tư thế (đợt thử 4 ninja)`.
 
@@ -55,6 +56,9 @@ Thêm vào cuối mỗi prompt:
 Ảnh gốc độ phân giải cao hơn nằm trong thư mục `Character/` nếu cần tham chiếu chi tiết.
 
 ## D. Bảng kiểm tra trước khi commit
+
+> Kết quả đợt thử (4 ninja): nhân vật giữ đúng nhận diện ở mọi tư thế. Khung hình ban đầu lệch (to kín khung, chân từ 87% đến 99%); `tools/normalize_poses.py` đã tự căn lại, không cần vẽ lại.
+
 
 - [ ] 16 file trong `art/poses/<hero_id>/{dash,attack,cast,hit}.png`.
 - [ ] Mỗi file 1024×1536, nền trong suốt thật, nhân vật quay sang phải.
