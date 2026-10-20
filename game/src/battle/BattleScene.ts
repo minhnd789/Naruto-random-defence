@@ -139,14 +139,6 @@ class UnitView {
    * Đổi ảnh theo tư thế. Ảnh tư thế được căn theo vạch chân và tỉ lệ đứng thẳng của brief,
    * nên đổi qua lại không bị nhảy vị trí. Trả về false nếu ninja chưa có ảnh tư thế này.
    */
-  /** Bản sao ảnh đang hiện, dùng để mờ dần khi đổi tư thế. */
-  snapshot(): Sprite {
-    const g = new Sprite(this.sprite.texture);
-    g.anchor.copyFrom(this.sprite.anchor);
-    g.scale.copyFrom(this.sprite.scale);
-    return g;
-  }
-
   setPose(p: Pose | 'idle'): boolean {
     if (p === this.pose) return p === 'idle' || !!this.poses[p];
     if (p !== 'idle' && !this.poses[p]) return false;
@@ -751,12 +743,14 @@ export class BattleScene {
   private setPose(v: UnitView, p: Pose | 'idle', holdMs?: number) {
     if (v.dead && p !== 'hit') return;
     const before = v.pose;
-    const old = v.snapshot();
     const real = v.setPose(p);
     if (real && v.pose !== before) {
-      v.body.addChild(old);
-      this.tw.to(old, { alpha: 0 }, 110, ease.inQuad).then(() => old.destroy());
-    } else old.destroy();
+      // Đổi ảnh tức thì kèm nhịp nhún nhỏ. Không chồng ảnh cũ mờ dần: hai tư thế khác dáng
+      // chồng lên nhau trông như bị chụp hai lần.
+      v.squashX = 1.05;
+      v.squashY = 0.95;
+      this.tw.to(v, { squashX: 1, squashY: 1 }, 120, ease.outBack);
+    }
     if (!real) v.setPose('idle');
     const lean = real ? 0 : FAKE_LEAN[p] * v.dir;
     this.tw.to(v.body, { rotation: lean }, p === 'idle' ? 160 : 90, ease.outQuad);
