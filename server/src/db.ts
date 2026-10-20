@@ -190,6 +190,9 @@ const MIGRATIONS: string[] = [
    );
    CREATE INDEX gear_user ON gear (user_id, hero_id);
    CREATE UNIQUE INDEX gear_one_per_slot ON gear (user_id, hero_id, slot) WHERE hero_id IS NOT NULL`,
+  // Đánh dấu đã nhận đồ khởi đầu: tài khoản đã có trang bị coi như đã nhận, phần còn lại được tặng bù lúc khởi động
+  `ALTER TABLE users ADD COLUMN starter_gear BOOLEAN NOT NULL DEFAULT false;
+   UPDATE users SET starter_gear = true WHERE id IN (SELECT DISTINCT user_id FROM gear)`,
 ];
 
 export async function migrate(db: Db) {

@@ -65,6 +65,23 @@ export async function grantStarterGear(q: Queryable, userId: number) {
   for (const slot of ['weapon', 'helmet', 'armor', 'boots'] as GearSlot[]) {
     await insertGear(q, userId, rollGear(secureRandom, slot, 1, 1));
   }
+  await q.query('UPDATE users SET starter_gear = true WHERE id = $1', [userId]);
+}
+
+/** Tặng bù đồ khởi đầu cho tài khoản tạo trước khi có trang bị (chạy lúc server khởi động, mỗi tài khoản đúng một lần). */
+export async function backfillStarterGear(db: Db): Promise<number> {
+  const { rows } = await db.query('SELECT id FROM users WHERE starter_gear = false');
+  let n = 0;
+  for (const r of rows) {
+    const done = await db.tx(async (q) => {
+      const u = (await q.query('SELECT starter_gear FROM users WHERE id = $1 FOR UPDATE', [r.id])).rows[0];
+      if (!u || u.starter_gear) return false;
+      await grantStarterGear(q, r.id);
+      return true;
+    });
+    if (done) n++;
+  }
+  return n;
 }
 
 const equipSchema = z.object({ heroId: z.string().refine((id) => HEROES.some((h) => h.id === id), 'Ninja không hợp lệ') });

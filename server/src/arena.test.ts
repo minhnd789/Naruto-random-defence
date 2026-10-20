@@ -25,7 +25,7 @@ before(async () => {
   await migrate(db);
   app = await buildApp(db, new TextEncoder().encode('test-secret-test-secret-test-secret'), {
     devTools: true,
-    rta: { draftTimeoutMs: 400, turnTimeoutMs: 400, botDelayMs: [5, 15] },
+    rta: { draftTimeoutMs: 1000, turnTimeoutMs: 400, botDelayMs: [5, 15] },
   });
   await app.ready();
   for (const name of ['alice', 'bob', 'carol']) {
@@ -193,8 +193,11 @@ test('RTA với bot: cấm/chọn và đánh tay, client phát lại khớp serv
   // Lượt chọn đầu tiên của A
   const firstPick = await c.wait((m) => m.t === 'draft' && m.phase === 'pick' && m.turn === 'A');
   assert.deepEqual(firstPick.prebans.A, 'madara');
-  c.send({ t: 'pick', heroId: 'naruto_sage' });
-  await c.wait((m) => m.t === 'draft' && m.picks?.A?.includes('naruto_sage'));
+  // Bot cấm trước ninja mạnh nhất của mình (có yếu tố ngẫu nhiên), nên chọn ninja đầu tiên chưa bị cấm
+  const banned = Object.values(firstPick.prebans);
+  const pickId = ['naruto_sage', 'temari', 'lee', 'gaara', 'kakashi'].find((h) => !banned.includes(h))!;
+  c.send({ t: 'pick', heroId: pickId });
+  await c.wait((m) => m.t === 'draft' && m.picks?.A?.includes(pickId));
   // Không chọn được ninja không sở hữu
   c.send({ t: 'pick', heroId: 'pain' });
   const start = await c.wait((m) => m.t === 'start', 30000);

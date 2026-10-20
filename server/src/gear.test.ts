@@ -10,6 +10,7 @@ import { heroById } from '../../game/src/engine/heroes';
 import { buildApp } from './app';
 import { Db, migrate, openDb } from './db';
 import { defenseOf } from './arena';
+import { backfillStarterGear } from './gear';
 
 let db: Db;
 let app: Awaited<ReturnType<typeof buildApp>>;
@@ -125,4 +126,21 @@ test('đánh trùm 1-6 chắc chắn rơi trang bị', async () => {
   assert.equal(fin.victory, true);
   assert.equal(fin.gearDrops.length, 1);
   assert.equal(fin.gearDrops[0].ilvl, 9);
+});
+
+test('tặng bù đồ khởi đầu cho tài khoản cũ: đúng một lần, không tặng lại sau khi phân giải', async () => {
+  // Giả lập tài khoản tạo trước khi có trang bị
+  const old = (await db.query(
+    "INSERT INTO users (username, display_name, password_hash, starter_gear) VALUES ('oldie', 'Oldie', 'x', false) RETURNING id",
+  )).rows[0].id;
+  const count = async () => (await db.query('SELECT COUNT(*)::int AS n FROM gear WHERE user_id = $1', [old])).rows[0].n;
+  assert.equal(await count(), 0);
+  assert.equal(await backfillStarterGear(db), 1, 'chỉ tài khoản cũ được tặng; tài khoản mới đã nhận lúc đăng ký');
+  assert.equal(await count(), 4);
+  const g = (await db.query('SELECT rarity, slot FROM gear WHERE user_id = $1', [old])).rows;
+  assert.ok(g.every((x) => x.rarity === 1));
+  assert.equal(await backfillStarterGear(db), 0, 'chạy lại không tặng thêm');
+  await db.query('DELETE FROM gear WHERE user_id = $1', [old]);
+  assert.equal(await backfillStarterGear(db), 0, 'phân giải hết đồ cũng không được tặng lại');
+  assert.equal(await count(), 0);
 });
