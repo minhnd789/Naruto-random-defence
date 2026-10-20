@@ -4,7 +4,9 @@ Dùng: python tools/check_assets.py
 Kiểm tra:
   - bg_*.png: đúng 1920x1080.
   - fx_*.png: đúng kích thước lưới theo manifest (mặc định 2048x2048, 4x4 ô 512).
-  - Nền đen: viền ngoài mỗi ô gần như đen (hiệu ứng không tràn sang ô bên cạnh).
+  - blend=add: nền đen, viền ngoài mỗi ô gần như đen (hiệu ứng không tràn sang ô bên cạnh).
+  - blend=normal: có kênh alpha thật, viền mỗi ô trong suốt, không còn sót màu phông,
+    không phải ô caro "giả trong suốt" do trình tạo ảnh vẽ vào.
   - Hiệu ứng "once": khung cuối tối hơn rõ rệt so với khung sáng nhất.
   - Hiệu ứng "loop": khung cuối gần giống khung đầu (nối mượt).
 In OK / LỖI cho từng file, và danh sách file còn thiếu so với manifest.
@@ -16,6 +18,7 @@ from pathlib import Path
 # Console Windows mặc định không in được tiếng Việt
 sys.stdout.reconfigure(encoding="utf-8")
 
+import numpy as np
 from PIL import Image, ImageChops, ImageStat
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -29,15 +32,42 @@ def brightness(im: Image.Image) -> float:
     return ImageStat.Stat(im.convert("L")).mean[0]
 
 
+def check_transparent(raw: Image.Image, meta: dict, cells_alpha: list) -> list[str]:
+    errs = []
+    if raw.mode not in ("RGBA", "LA") or np.asarray(raw.getchannel("A")).min() > 250:
+        return ["blend=normal nhưng ảnh không có nền trong suốt thật (có thể là ô caro giả). Hãy vẽ trên phông màu rồi chạy tools/pack_sheet.py --key"]
+    for i, a in enumerate(cells_alpha):
+        edge = max(a[:6].mean(), a[-6:].mean(), a[:, :6].mean(), a[:, -6:].mean())
+        if edge > 10:
+            errs.append(f"khung {i + 1}: viền ô không trong suốt (hiệu ứng tràn mép hoặc còn nền)")
+            break
+    rgba = np.asarray(raw.convert("RGBA")).astype(np.float32)
+    key = np.array([int(meta.get("key", "#FF00FF").lstrip("#")[i : i + 2], 16) for i in (0, 2, 4)], dtype=np.float32)
+    visible = rgba[..., 3] > 128
+    near = (np.linalg.norm(rgba[..., :3] - key, axis=-1) < 70) & visible
+    if visible.any() and near.sum() / visible.sum() > 0.005:
+        errs.append(f"còn sót màu phông {meta.get('key')} ({near.sum() / visible.sum():.1%} điểm ảnh hiện)")
+    return errs
+
+
 def check_fx(path: Path, meta: dict) -> list[str]:
     errs = []
-    im = Image.open(path).convert("RGB")
+    raw = Image.open(path)
+    im = raw.convert("RGB")
     cols, rows, count = meta["cols"], meta["rows"], meta["frames"]
     if im.size != (cols * CELL, rows * CELL):
         return [f"kích thước {im.size}, cần {(cols * CELL, rows * CELL)}"]
-    cells = [im.crop(((i % cols) * CELL, (i // cols) * CELL, (i % cols + 1) * CELL, (i // cols + 1) * CELL)) for i in range(count)]
-    # Viền 6px quanh mỗi ô phải gần đen
-    for i, c in enumerate(cells):
+    boxes = [((i % cols) * CELL, (i // cols) * CELL, (i % cols + 1) * CELL, (i // cols + 1) * CELL) for i in range(count)]
+    if meta.get("blend") == "normal":
+        alpha = raw.convert("RGBA").getchannel("A")
+        cells_alpha = [np.asarray(alpha.crop(b)).astype(np.float32) for b in boxes]
+        errs += check_transparent(raw, meta, cells_alpha)
+        # Độ "sáng" của khung = độ phủ alpha, dùng cho kiểm tra once/loop bên dưới
+        cells = [alpha.crop(b).convert("RGB") for b in boxes]
+    else:
+        cells = [im.crop(b) for b in boxes]
+    # blend=add: viền 6px quanh mỗi ô phải gần đen
+    for i, c in enumerate(cells if meta.get("blend") != "normal" else []):
         edge = max(
             brightness(c.crop((0, 0, CELL, 6))),
             brightness(c.crop((0, CELL - 6, CELL, CELL))),
