@@ -1,0 +1,320 @@
+{
+  "_note": "Mỗi spritesheet 2048x2048, lưới cols x rows, đọc trái→phải, trên→dưới. Sửa fps/frames nếu cần.",
+  "fx": {
+    "fx_slash": {
+      "cols": 4,
+      "rows": 4,
+      "frames": 16,
+      "fps": 24,
+      "loop": false
+    },
+    "fx_slash_x": {
+      "cols": 4,
+      "rows": 4,
+      "frames": 16,
+      "fps": 24,
+      "loop": false
+    },
+    "fx_impact": {
+      "cols": 4,
+      "rows": 4,
+      "frames": 16,
+      "fps": 24,
+      "loop": false
+    },
+    "fx_punch_impact": {
+      "cols": 4,
+      "rows": 4,
+      "frames": 16,
+      "fps": 24,
+      "loop": false
+    },
+    "fx_dash_trail": {
+      "cols": 4,
+      "rows": 4,
+      "frames": 16,
+      "fps": 24,
+      "loop": false
+    },
+    "fx_shockwave": {
+      "cols": 4,
+      "rows": 4,
+      "frames": 16,
+      "fps": 24,
+      "loop": false
+    },
+    "fx_kunai": {
+      "cols": 4,
+      "rows": 4,
+      "frames": 16,
+      "fps": 16,
+      "loop": true
+    },
+    "fx_cast_circle": {
+      "cols": 4,
+      "rows": 4,
+      "frames": 16,
+      "fps": 24,
+      "loop": false
+    },
+    "fx_death_smoke": {
+      "cols": 4,
+      "rows": 4,
+      "frames": 16,
+      "fps": 24,
+      "loop": false
+    },
+    "fx_fireball": {
+      "cols": 4,
+      "rows": 4,
+      "frames": 16,
+      "fps": 16,
+      "loop": true
+    },
+    "fx_fire_burst": {
+      "cols": 4,
+      "rows": 4,
+      "frames": 16,
+      "fps": 24,
+      "loop": false
+    },
+    "fx_amaterasu": {
+      "cols": 4,
+      "rows": 4,
+      "frames": 16,
+      "fps": 24,
+      "loop": false
+    },
+    "fx_wind_blades": {
+      "cols": 4,
+      "rows": 4,
+      "frames": 16,
+      "fps": 24,
+      "loop": false
+    },
+    "fx_rasengan": {
+      "cols": 4,
+      "rows": 4,
+      "frames": 16,
+      "fps": 16,
+      "loop": true
+    },
+    "fx_rasenshuriken": {
+      "cols": 4,
+      "rows": 4,
+      "frames": 16,
+      "fps": 16,
+      "loop": true
+    },
+    "fx_wind_explosion": {
+      "cols": 4,
+      "rows": 4,
+      "frames": 16,
+      "fps": 24,
+      "loop": false
+    },
+    "fx_lightning": {
+      "cols": 4,
+      "rows": 4,
+      "frames": 16,
+      "fps": 24,
+      "loop": false
+    },
+    "fx_chidori": {
+      "cols": 4,
+      "rows": 4,
+      "frames": 16,
+      "fps": 16,
+      "loop": true
+    },
+    "fx_sand_burst": {
+      "cols": 4,
+      "rows": 4,
+      "frames": 16,
+      "fps": 24,
+      "loop": false
+    },
+    "fx_sand_coffin": {
+      "cols": 4,
+      "rows": 4,
+      "frames": 16,
+      "fps": 24,
+      "loop": false
+    },
+    "fx_earth_spikes": {
+      "cols": 4,
+      "rows": 4,
+      "frames": 16,
+      "fps": 24,
+      "loop": false
+    },
+    "fx_water_shark": {
+      "cols": 4,
+      "rows": 4,
+      "frames": 16,
+      "fps": 16,
+      "loop": true
+    },
+    "fx_water_splash": {
+      "cols": 4,
+      "rows": 4,
+      "frames": 16,
+      "fps": 24,
+      "loop": false
+    },
+    "fx_dark_orb": {
+      "cols": 4,
+      "rows": 4,
+      "frames": 16,
+      "fps": 16,
+      "loop": true
+    },
+    "fx_dark_burst": {
+      "cols": 4,
+      "rows": 4,
+      "frames": 16,
+      "fps": 24,
+      "loop": false
+    },
+    "fx_meteor": {
+      "cols": 4,
+      "rows": 4,
+      "frames": 16,
+      "fps": 16,
+      "loop": true
+    },
+    "fx_meteor_impact": {
+      "cols": 4,
+      "rows": 4,
+      "frames": 16,
+      "fps": 24,
+      "loop": false
+    },
+    "fx_light_burst": {
+      "cols": 4,
+      "rows": 4,
+      "frames": 16,
+      "fps": 24,
+      "loop": false
+    },
+    "fx_flash_step": {
+      "cols": 4,
+      "rows": 4,
+      "frames": 16,
+      "fps": 24,
+      "loop": false
+    },
+    "fx_susanoo_arrow": {
+      "cols": 4,
+      "rows": 4,
+      "frames": 16,
+      "fps": 16,
+      "loop": true
+    },
+    "fx_kamui": {
+      "cols": 4,
+      "rows": 4,
+      "frames": 16,
+      "fps": 24,
+      "loop": false
+    },
+    "fx_tsukuyomi": {
+      "cols": 4,
+      "rows": 4,
+      "frames": 16,
+      "fps": 24,
+      "loop": false
+    },
+    "fx_crows": {
+      "cols": 4,
+      "rows": 4,
+      "frames": 16,
+      "fps": 24,
+      "loop": false
+    },
+    "fx_shinra_tensei": {
+      "cols": 4,
+      "rows": 4,
+      "frames": 16,
+      "fps": 24,
+      "loop": false
+    },
+    "fx_shadow_bind": {
+      "cols": 4,
+      "rows": 4,
+      "frames": 16,
+      "fps": 24,
+      "loop": false
+    },
+    "fx_twin_lions": {
+      "cols": 4,
+      "rows": 4,
+      "frames": 16,
+      "fps": 24,
+      "loop": false
+    },
+    "fx_sakura_punch": {
+      "cols": 4,
+      "rows": 4,
+      "frames": 16,
+      "fps": 24,
+      "loop": false
+    },
+    "fx_eight_gates": {
+      "cols": 4,
+      "rows": 4,
+      "frames": 16,
+      "fps": 16,
+      "loop": true
+    },
+    "fx_heal": {
+      "cols": 4,
+      "rows": 4,
+      "frames": 16,
+      "fps": 24,
+      "loop": false
+    },
+    "fx_buff": {
+      "cols": 4,
+      "rows": 4,
+      "frames": 16,
+      "fps": 24,
+      "loop": false
+    },
+    "fx_debuff": {
+      "cols": 4,
+      "rows": 4,
+      "frames": 16,
+      "fps": 24,
+      "loop": false
+    },
+    "fx_stun": {
+      "cols": 4,
+      "rows": 4,
+      "frames": 16,
+      "fps": 16,
+      "loop": true
+    },
+    "fx_shield": {
+      "cols": 4,
+      "rows": 4,
+      "frames": 16,
+      "fps": 16,
+      "loop": true
+    },
+    "fx_burn": {
+      "cols": 4,
+      "rows": 4,
+      "frames": 16,
+      "fps": 16,
+      "loop": true
+    },
+    "fx_level_up": {
+      "cols": 4,
+      "rows": 4,
+      "frames": 16,
+      "fps": 24,
+      "loop": false
+    }
+  }
+}
