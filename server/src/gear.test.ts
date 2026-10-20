@@ -10,7 +10,8 @@ import { heroById } from '../../game/src/engine/heroes';
 import { buildApp } from './app';
 import { Db, migrate, openDb } from './db';
 import { defenseOf } from './arena';
-import { backfillStarterGear } from './gear';
+import { backfillGearVariants, backfillStarterGear } from './gear';
+import { GEAR_SLOTS, GEAR_VARIANTS, Rarity, applyGear, gearVariant, rollGear, variantsFor } from '../../game/src/engine/gear';
 
 let db: Db;
 let app: Awaited<ReturnType<typeof buildApp>>;
@@ -68,7 +69,8 @@ test('mặc vũ khí: chỉ số vào trận do server chụp có cộng trang b
   assert.ok(kakashi.gear.atk > 0);
   const base = computeStats(heroById('kakashi'), { level: 1, stars: 4, awaken: 0 });
   const geared = computeStats(heroById('kakashi'), kakashi);
-  assert.equal(geared.atk, base.atk + kakashi.gear.atk);
+  assert.deepEqual(geared, applyGear(base, kakashi.gear));
+  assert.ok(geared.atk > base.atk);
   // Trận vẫn xác thực được với chỉ số có trang bị
   const fin = (await call('POST', '/api/battle/finish', { battleId: s.battleId, actions: play(s.seed, s.team, s.enemies) })).json();
   assert.equal(fin.victory, true);
@@ -143,4 +145,34 @@ test('tặng bù đồ khởi đầu cho tài khoản cũ: đúng một lần, k
   await db.query('DELETE FROM gear WHERE user_id = $1', [old]);
   assert.equal(await backfillStarterGear(db), 0, 'phân giải hết đồ cũng không được tặng lại');
   assert.equal(await count(), 0);
+});
+
+test('mẫu đồ: ô nào phẩm chất nào cũng có mẫu; pháp khí cũ (Công% + Máu%) cũng gán được mẫu', () => {
+  for (const slot of GEAR_SLOTS) {
+    for (let r = 0; r <= 5; r++) {
+      assert.ok(variantsFor(slot, r as Rarity).length > 0, `${slot} phẩm ${r}`);
+      if (slot === 'artifact') assert.ok(variantsFor(slot, r as Rarity, ['atkPct', 'hpPct']).length > 0, `pháp khí cũ phẩm ${r}`);
+    }
+  }
+  assert.equal(new Set(GEAR_VARIANTS.map((v) => v.id)).size, GEAR_VARIANTS.length, 'id mẫu không trùng');
+  // Thần khí mang đúng chỉ số chính riêng
+  const fan = rollGear(Math.random, 'artifact', 5, 10, 'artifact_bashosen');
+  assert.deepEqual(fan.main.map((l) => l.stat), ['atkPct', 'eff']);
+  assert.equal(gearVariant(fan)!.name, 'Quạt Ba Tiêu');
+});
+
+test('đồ rơi ra có mẫu; đồ cũ chưa có mẫu được gán lúc khởi động, chỉ số giữ nguyên', async () => {
+  const g = (await call('POST', '/api/dev/gear', { count: 5, ilvl: 5 })).json().gear;
+  assert.ok(g.every((x: any) => GEAR_VARIANTS.some((v) => v.id === x.variant && v.slot === x.slot)));
+  const old = g.find((x: any) => !x.heroId);
+  await db.query("UPDATE gear SET variant = NULL, slot = 'artifact', main = $2 WHERE id = $1", [
+    old.id,
+    JSON.stringify([{ stat: 'atkPct', value: 0.1 }, { stat: 'hpPct', value: 0.1 }]),
+  ]);
+  assert.ok((await backfillGearVariants(db)) >= 1);
+  const fixed = (await call('GET', '/api/gear')).json().gear.find((x: any) => x.id === old.id);
+  assert.equal(gearVariant(fixed)!.slot, 'artifact');
+  assert.deepEqual(gearVariant(fixed)!.main, ['atkPct', 'hpPct']);
+  assert.equal(fixed.main[0].value, 0.1);
+  assert.equal(await backfillGearVariants(db), 0);
 });

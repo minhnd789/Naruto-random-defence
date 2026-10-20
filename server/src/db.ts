@@ -193,6 +193,8 @@ const MIGRATIONS: string[] = [
   // Đánh dấu đã nhận đồ khởi đầu: tài khoản đã có trang bị coi như đã nhận, phần còn lại được tặng bù lúc khởi động
   `ALTER TABLE users ADD COLUMN starter_gear BOOLEAN NOT NULL DEFAULT false;
    UPDATE users SET starter_gear = true WHERE id IN (SELECT DISTINCT user_id FROM gear)`,
+  // Mẫu đồ (tên + hình); đồ cũ để NULL, được gán mẫu lúc khởi động (backfillGearVariants)
+  `ALTER TABLE gear ADD COLUMN variant TEXT`,
 ];
 
 export async function migrate(db: Db) {

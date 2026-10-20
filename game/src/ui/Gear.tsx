@@ -1,6 +1,6 @@
-import { CSSProperties, useMemo, useState } from 'react';
+import { CSSProperties, useEffect, useMemo, useState } from 'react';
 import { api, Profile } from '../api';
-import { GEAR_SLOTS, GearItem, GearSlot, RARITIES, SALVAGE_COINS, SLOT_INFO, formatStat, gearScore } from '../engine/gear';
+import { GEAR_SLOTS, GearItem, GearSlot, RARITIES, SALVAGE_COINS, SLOT_INFO, formatStat, gearName, gearScore, gearVariant } from '../engine/gear';
 import { heroById } from '../engine/heroes';
 import { Portrait } from './Portrait';
 
@@ -8,20 +8,45 @@ type SetProfile = (p: Profile & { gear?: GearItem[] }) => void;
 
 export const rarityCss = (r: number) => RARITIES[r].color;
 
+// Danh sách mẫu đã có hình (tools/build_assets.py ghi ra); mẫu chưa có hình dùng chữ Hán của ô
+let gearArt: Set<string> | null = null;
+let gearArtLoad: Promise<Set<string>> | null = null;
+function loadGearArt() {
+  gearArtLoad ??= fetch('/gear/manifest.json')
+    .then((r) => (r.ok ? r.json() : { gear: [] }))
+    .catch(() => ({ gear: [] }))
+    .then((m: { gear: string[] }) => (gearArt = new Set(m.gear)));
+  return gearArtLoad;
+}
+function useGearArt() {
+  const [art, setArt] = useState(gearArt);
+  useEffect(() => {
+    if (!art) loadGearArt().then(setArt);
+  }, [art]);
+  return art;
+}
+
 /** Ô vuông trang bị: khung màu phẩm chất (Thần Thoại viền cầu vồng), biểu tượng loại đồ, cấp đồ. */
 export function GearIcon({ item, slot, size = 56, onClick, selected }: { item?: GearItem | null; slot?: GearSlot; size?: number; onClick?: () => void; selected?: boolean }) {
   const s = item?.slot ?? slot!;
   const r = item?.rarity ?? -1;
+  const art = useGearArt();
+  const [broken, setBroken] = useState(false);
+  const img = item && !broken && art?.has(item.variant) ? `/gear/${item.variant}.webp` : null;
   return (
     <button
       className={`gear-icon ${item ? `r${r}` : 'empty'} ${selected ? 'sel' : ''}`}
       style={{ width: size, height: size, '--rc': item ? rarityCss(r) : '#3a3340' } as CSSProperties}
       onClick={onClick}
-      title={item ? `${RARITIES[item.rarity].name} · ${SLOT_INFO[s].name} cấp ${item.ilvl}` : `${SLOT_INFO[s].name}: trống`}
+      title={item ? `${gearName(item)} · ${RARITIES[item.rarity].name} · cấp ${item.ilvl}` : `${SLOT_INFO[s].name}: trống`}
     >
-      <span className="gi-k" style={{ fontSize: size * 0.42 }}>
-        {SLOT_INFO[s].icon}
-      </span>
+      {img ? (
+        <img className="gi-img" src={img} alt="" draggable={false} onError={() => setBroken(true)} />
+      ) : (
+        <span className="gi-k" style={{ fontSize: size * 0.42 }}>
+          {SLOT_INFO[s].icon}
+        </span>
+      )}
       {item && <span className="gi-lv">{item.ilvl}</span>}
       {item?.heroId && <Portrait hero={heroById(item.heroId)} size={size * 0.38} className="gi-owner" />}
       {!item && <small className="gi-name">{SLOT_INFO[s].name}</small>}
@@ -31,14 +56,15 @@ export function GearIcon({ item, slot, size = 56, onClick, selected }: { item?: 
 
 export function GearDetail({ item }: { item: GearItem }) {
   const r = RARITIES[item.rarity];
+  const v = gearVariant(item);
   return (
     <div className={`gear-detail r${item.rarity}`} style={{ '--rc': rarityCss(item.rarity) } as CSSProperties}>
       <div className="gd-head">
         <GearIcon item={item} size={52} />
         <div>
-          <b className="gd-rarity">{r.name}</b>
+          <b className="gd-rarity">{gearName(item)}</b>
           <span>
-            {SLOT_INFO[item.slot].name} · cấp {item.ilvl}
+            {r.name} · {SLOT_INFO[item.slot].name} · cấp {item.ilvl}
           </span>
         </div>
       </div>
@@ -54,6 +80,7 @@ export function GearDetail({ item }: { item: GearItem }) {
           ))}
         </div>
       )}
+      {v?.desc && <p className="gd-desc">{v.desc}</p>}
       {item.heroId && <small className="muted">Đang mặc: {heroById(item.heroId).name}</small>}
     </div>
   );

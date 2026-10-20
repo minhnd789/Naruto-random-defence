@@ -1,6 +1,8 @@
 """Kiểm tra ảnh nền và spritesheet trước khi commit.
 
-Dùng: python tools/check_assets.py
+Dùng: python tools/check_assets.py            (nền + hiệu ứng)
+      python tools/check_assets.py --poses    (tư thế nhân vật)
+      python tools/check_assets.py --gear     (icon trang bị art/gear/<mẫu>.png)
 Kiểm tra:
   - bg_*.png: đúng 1920x1080.
   - fx_*.png: đúng kích thước lưới theo manifest (mặc định 2048x2048, 4x4 ô 512).
@@ -29,6 +31,9 @@ POSE_NAMES = ["dash", "attack", "cast", "hit"]
 POSE_SIZE = (1024, 1536)
 POSE_FEET = 0.96   # chân chạm vạch này (tỉ lệ chiều cao)
 POSE_STAND = 0.80  # chiều cao đứng thẳng (tỉ lệ chiều cao ảnh)
+GEAR_DIR = ROOT / "art" / "gear"
+GEAR_SIZE = (1024, 1024)
+GEAR_TS = ROOT / "game" / "src" / "engine" / "gear.ts"
 BACKGROUNDS = ["bg_konoha", "bg_forest", "bg_rain", "bg_valley", "bg_desert", "bg_arena", "bg_rta"]
 
 
@@ -129,6 +134,59 @@ def main_poses() -> int:
     return 1 if bad else 0
 
 
+def gear_ids() -> list[str]:
+    import re
+    return re.findall(r"^\s*V\('(\w+)'", GEAR_TS.read_text(encoding="utf-8"), re.M)
+
+
+def check_gear(path: Path) -> list[str]:
+    errs = []
+    raw = Image.open(path)
+    if raw.size != GEAR_SIZE:
+        errs.append(f"kích thước {raw.size}, cần {GEAR_SIZE}")
+    if raw.mode not in ("RGBA", "LA") or np.asarray(raw.getchannel("A")).min() > 250:
+        return errs + ["không có nền trong suốt thật (nền đặc hoặc ô caro giả)"]
+    rgba = raw.convert("RGBA")
+    a = np.asarray(rgba.getchannel("A")) > 40
+    rows = np.where(a.any(axis=1))[0]
+    cols = np.where(a.any(axis=0))[0]
+    if not len(rows):
+        return errs + ["ảnh trống"]
+    w, h = rgba.size
+    if cols[0] < 8 or rows[0] < 8 or cols[-1] > w - 9 or rows[-1] > h - 9:
+        errs.append("vật phẩm chạm mép ảnh (bị cắt)")
+    span = max(cols[-1] - cols[0], rows[-1] - rows[0]) / max(w, h)
+    if span < 0.6:
+        errs.append(f"vật phẩm quá nhỏ (chiếm {span:.0%} khung, cần 70-90%)")
+    # Ô caro "giả trong suốt" vẽ vào ảnh: nhiều điểm xám/trắng đặc ở góc
+    corner = np.asarray(rgba.crop((0, 0, w // 8, h // 8)).getchannel("A"))
+    if corner.mean() > 60:
+        errs.append("góc ảnh không trong suốt (nền hoặc ô caro)")
+    return errs
+
+
+def main_gear() -> int:
+    bad = 0
+    missing = []
+    for vid in gear_ids():
+        f = GEAR_DIR / f"{vid}.png"
+        if not f.exists():
+            missing.append(f.name)
+            continue
+        errs = check_gear(f)
+        bad += bool(errs)
+        print(("OK   " if not errs else "LỖI ") + f.name + ("" if not errs else ": " + "; ".join(errs)))
+    known = set(gear_ids())
+    for f in sorted(GEAR_DIR.glob("*.png")) if GEAR_DIR.exists() else []:
+        if f.stem not in known:
+            print(f"LẠ   {f.name}: không có mẫu này trong game/src/engine/gear.ts (đặt sai tên?)")
+    if missing:
+        print(f"\nCòn thiếu {len(missing)} file trong art/gear/:")
+        for m in missing:
+            print("  -", m)
+    return 1 if bad else 0
+
+
 def main() -> int:
     manifest = json.loads((FX / "manifest.json").read_text(encoding="utf-8"))["fx"]
     bad = 0
@@ -158,4 +216,4 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    sys.exit(main_poses() if "--poses" in sys.argv else main())
+    sys.exit(main_poses() if "--poses" in sys.argv else main_gear() if "--gear" in sys.argv else main())

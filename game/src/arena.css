@@ -856,6 +856,27 @@
     --rb: 360deg;
   }
 }
+.gi-img {
+  width: 86%;
+  height: 86%;
+  object-fit: contain;
+  pointer-events: none;
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.7));
+}
+.gear-icon.r4 .gi-img,
+.gear-icon.r5 .gi-img {
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.7)) drop-shadow(0 0 6px color-mix(in srgb, var(--rc, #fff) 60%, transparent));
+}
+.gear-icon.r5 .gi-img {
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.7)) drop-shadow(0 0 7px rgba(255, 240, 180, 0.65));
+}
+.gd-desc {
+  margin: 6px 0 0;
+  font-size: 12px;
+  font-style: italic;
+  line-height: 1.4;
+  color: #d8cbb8;
+}
 .gi-k {
   font-weight: 900;
   line-height: 1;

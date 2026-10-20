@@ -3,6 +3,7 @@ import { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { z } from 'zod';
 import {
   GEAR_SLOTS,
+  GEAR_VARIANTS,
   GearBonus,
   GearItem,
   GearSlot,
@@ -12,6 +13,7 @@ import {
   rollGear,
   rollRarity,
   rollSlot,
+  variantsFor,
 } from '../../game/src/engine/gear';
 import { HEROES } from '../../game/src/engine/heroes';
 import { Db, Queryable } from './db';
@@ -22,7 +24,16 @@ import { profile } from './profile';
 const json = <T>(v: unknown): T => (typeof v === 'string' ? JSON.parse(v) : v) as T;
 
 function rowToItem(r: any): GearItem {
-  return { id: Number(r.id), slot: r.slot, rarity: r.rarity, ilvl: r.ilvl, main: json(r.main), subs: json(r.subs), heroId: r.hero_id ?? null };
+  return {
+    id: Number(r.id),
+    slot: r.slot,
+    rarity: r.rarity,
+    ilvl: r.ilvl,
+    main: json(r.main),
+    subs: json(r.subs),
+    heroId: r.hero_id ?? null,
+    variant: r.variant ?? '',
+  };
 }
 
 export async function listGear(q: Queryable, userId: number): Promise<GearItem[]> {
@@ -43,8 +54,8 @@ export async function gearBonusByHero(q: Queryable, userId: number, heroIds: str
 
 export async function insertGear(q: Queryable, userId: number, item: Omit<GearItem, 'id' | 'heroId'>): Promise<GearItem> {
   const { rows } = await q.query(
-    'INSERT INTO gear (user_id, slot, rarity, ilvl, main, subs) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
-    [userId, item.slot, item.rarity, item.ilvl, JSON.stringify(item.main), JSON.stringify(item.subs)],
+    'INSERT INTO gear (user_id, slot, rarity, ilvl, main, subs, variant) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *',
+    [userId, item.slot, item.rarity, item.ilvl, JSON.stringify(item.main), JSON.stringify(item.subs), item.variant],
   );
   return rowToItem(rows[0]);
 }
@@ -84,6 +95,18 @@ export async function backfillStarterGear(db: Db): Promise<number> {
   return n;
 }
 
+/** Đồ rơi ra trước khi có mẫu đồ: gán một mẫu hợp ô + phẩm chất + chỉ số chính sẵn có (chỉ số giữ nguyên). */
+export async function backfillGearVariants(db: Db): Promise<number> {
+  const { rows } = await db.query('SELECT id, slot, rarity, main FROM gear WHERE variant IS NULL');
+  for (const r of rows) {
+    const main = json<{ stat: string }[]>(r.main).map((l) => l.stat) as GearItem['main'][number]['stat'][];
+    const list = variantsFor(r.slot, r.rarity, main);
+    if (!list.length) continue;
+    await db.query('UPDATE gear SET variant = $2 WHERE id = $1', [r.id, list[Math.floor(secureRandom() * list.length)].id]);
+  }
+  return rows.length;
+}
+
 const equipSchema = z.object({ heroId: z.string().refine((id) => HEROES.some((h) => h.id === id), 'Ninja không hợp lệ') });
 const salvageSchema = z.object({ ids: z.array(z.number().int()).min(1).max(200) });
 const grantSchema = z.object({
@@ -91,6 +114,7 @@ const grantSchema = z.object({
   rarity: z.number().int().min(0).max(5).optional(),
   ilvl: z.number().int().min(1).max(60).optional(),
   slot: z.enum(GEAR_SLOTS as [GearSlot, ...GearSlot[]]).optional(),
+  variant: z.string().refine((id) => GEAR_VARIANTS.some((v) => v.id === id), 'Mẫu không hợp lệ').optional(),
 });
 
 export function registerGearRoutes(app: FastifyInstance, db: Db, requireAuth: (req: FastifyRequest, reply: FastifyReply) => Promise<void>, devTools: boolean) {
@@ -136,9 +160,10 @@ export function registerGearRoutes(app: FastifyInstance, db: Db, requireAuth: (r
       const g = parse(grantSchema, req.body);
       await db.tx(async (q) => {
         for (let i = 0; i < g.count; i++) {
-          const slot = g.slot ?? rollSlot(secureRandom);
-          const rarity = (g.rarity ?? rollRarity(secureRandom)) as Rarity;
-          await insertGear(q, req.userId, rollGear(secureRandom, slot, rarity, g.ilvl ?? 10));
+          const v = g.variant ? GEAR_VARIANTS.find((x) => x.id === g.variant)! : null;
+          const slot = v?.slot ?? g.slot ?? rollSlot(secureRandom);
+          const rarity = (g.rarity ?? v?.rarity[1] ?? rollRarity(secureRandom)) as Rarity;
+          await insertGear(q, req.userId, rollGear(secureRandom, slot, rarity, g.ilvl ?? 10, v?.id));
         }
       });
       return state(req.userId);

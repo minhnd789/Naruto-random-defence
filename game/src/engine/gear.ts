@@ -64,6 +64,7 @@ export interface GearItem {
   main: StatLine[];
   subs: StatLine[];
   heroId: string | null; // ninja đang mặc
+  variant: string; // mẫu đồ (tên + hình), xem GEAR_VARIANTS
 }
 
 /** Tổng chỉ số cộng thêm từ trang bị (đưa vào UnitSetup để server xác thực trận). */
@@ -83,8 +84,9 @@ export function mainValue(stat: GearStat, ilvl: number, rarity: Rarity) {
 }
 
 /** Tạo một món đồ (rnd trả về số trong [0,1)). */
-export function rollGear(rnd: () => number, slot: GearSlot, rarity: Rarity, ilvl: number): Omit<GearItem, 'id' | 'heroId'> {
-  const main = SLOT_INFO[slot].main.map((stat) => ({ stat, value: mainValue(stat, ilvl, rarity) }));
+export function rollGear(rnd: () => number, slot: GearSlot, rarity: Rarity, ilvl: number, variantId?: string): Omit<GearItem, 'id' | 'heroId'> {
+  const variant = variantId ? variantById(variantId) : rollVariant(rnd, slot, rarity);
+  const main = (variant.main ?? SLOT_INFO[slot].main).map((stat) => ({ stat, value: mainValue(stat, ilvl, rarity) }));
   const taken = new Set(main.map((m) => m.stat));
   const subs: StatLine[] = [];
   const quality = rarity >= 5 ? 0.6 : 0; // Thần Thoại: chỉ số phụ luôn ở nửa trên
@@ -97,7 +99,7 @@ export function rollGear(rnd: () => number, slot: GearSlot, rarity: Rarity, ilvl
     const r = quality + rnd() * (1 - quality);
     subs.push({ stat, value: roundStat(stat, (lo + (hi - lo) * r) * lv) });
   }
-  return { slot, rarity, ilvl, main, subs };
+  return { slot, rarity, ilvl, main, subs, variant: variant.id };
 }
 
 /** Phẩm chất rơi ra: trọng số theo mốc (càng về sau và đánh trùm càng dễ ra đồ xịn). */
@@ -153,4 +155,116 @@ export const SALVAGE_COINS = [200, 500, 1200, 3000, 8000, 20000];
 export function gearScore(it: Pick<GearItem, 'main' | 'subs'>) {
   const w: Record<GearStat, number> = { atk: 1.2, hp: 0.1, def: 0.8, atkPct: 1500, hpPct: 900, defPct: 700, spd: 8, crit: 900, critDmg: 600, eff: 400, res: 400 };
   return Math.round([...it.main, ...it.subs].reduce((s, l) => s + l.value * w[l.stat], 0));
+}
+
+// ================= Mẫu đồ: tên + hình =================
+// Mỗi món rơi ra mang một mẫu (variant) hợp với phẩm chất. Đồ thường chỉ khác tên/hình;
+// Pháp khí là bảo vật/thần khí trong thế giới nhẫn giả, mỗi món có cặp chỉ số chính riêng.
+// Hình: game/public/gear/<id>.webp (ảnh gốc art/gear/<id>.png, xem docs/GEAR_BRIEF.md).
+
+export interface GearVariant {
+  id: string;
+  slot: GearSlot;
+  name: string;
+  /** Khoảng phẩm chất có thể rơi ra mẫu này [thấp nhất, cao nhất]. */
+  rarity: [Rarity, Rarity];
+  /** Pháp khí: chỉ số chính riêng (mặc định theo SLOT_INFO). */
+  main?: GearStat[];
+  desc?: string;
+}
+
+const V = (id: string, slot: GearSlot, name: string, lo: Rarity, hi: Rarity, extra: Partial<GearVariant> = {}): GearVariant => ({
+  id,
+  slot,
+  name,
+  rarity: [lo, hi],
+  ...extra,
+});
+
+export const GEAR_VARIANTS: GearVariant[] = [
+  V('weapon_kunai', 'weapon', 'Kunai', 0, 2),
+  V('weapon_shuriken', 'weapon', 'Phi Tiêu Bốn Cánh', 0, 2),
+  V('weapon_tanto', 'weapon', 'Đoản Đao Ám Bộ', 1, 4),
+  V('weapon_katana', 'weapon', 'Trường Kiếm Lôi Quang', 3, 5),
+  V('weapon_fuma', 'weapon', 'Phong Ma Thủ Lý Kiếm', 3, 5),
+
+  V('helmet_hood', 'helmet', 'Mũ Trùm Vải', 0, 2),
+  V('helmet_anbu', 'helmet', 'Mặt Nạ Ám Bộ', 1, 4),
+  V('helmet_samurai', 'helmet', 'Mũ Giáp Thiết Quốc', 3, 5),
+  V('helmet_kage', 'helmet', 'Nón Ảnh', 3, 5),
+
+  V('armor_mesh', 'armor', 'Áo Lưới Nhẫn Giả', 0, 2),
+  V('armor_vest', 'armor', 'Áo Giáp Trung Nhẫn', 0, 3),
+  V('armor_cloak', 'armor', 'Áo Choàng Mây Đỏ', 3, 5),
+  V('armor_samurai', 'armor', 'Giáp Đỏ Chiến Quốc', 3, 5),
+
+  V('pants_wrap', 'pants', 'Quần Quấn Ống', 0, 2),
+  V('pants_hakama', 'pants', 'Quần Hakama', 1, 4),
+  V('pants_armored', 'pants', 'Quần Giáp Đùi', 3, 5),
+  V('pants_sage', 'pants', 'Quần Tiên Nhân', 3, 5),
+
+  V('gloves_fingerless', 'gloves', 'Găng Hở Ngón', 0, 2),
+  V('gloves_bracer', 'gloves', 'Hộ Uyển Sắt', 1, 4),
+  V('gloves_claw', 'gloves', 'Găng Vuốt Thép', 3, 5),
+  V('gloves_thunder', 'gloves', 'Găng Giáp Lôi Điện', 3, 5),
+
+  V('boots_sandal', 'boots', 'Dép Nhẫn Giả', 0, 2),
+  V('boots_wrap', 'boots', 'Giày Quấn Vải', 0, 3),
+  V('boots_armored', 'boots', 'Giày Giáp Sắt', 3, 5),
+  V('boots_wind', 'boots', 'Giày Phong Hành', 3, 5),
+
+  V('headband_leaf', 'headband', 'Băng Đô Làng Lá', 0, 4),
+  V('headband_sand', 'headband', 'Băng Đô Làng Cát', 0, 4),
+  V('headband_mist', 'headband', 'Băng Đô Làng Sương Mù', 0, 4),
+  V('headband_cloud', 'headband', 'Băng Đô Làng Mây', 0, 4),
+  V('headband_stone', 'headband', 'Băng Đô Làng Đá', 0, 4),
+  V('headband_alliance', 'headband', 'Băng Đô Liên Quân Nhẫn Giả', 3, 5),
+
+  // Pháp khí bậc thấp: dụng cụ nhẫn giả đặc biệt
+  V('artifact_scroll', 'artifact', 'Đại Quyển Trục Phong Ấn', 0, 2, { main: ['atkPct', 'hpPct'], desc: 'Cuộn trục khổng lồ chứa hàng trăm vũ khí được phong ấn.' }),
+  V('artifact_hiraishin', 'artifact', 'Kunai Phi Lôi Thần', 0, 3, { main: ['atkPct', 'spd'], desc: 'Kunai ba mũi khắc thuật thức dịch chuyển tức thời của Tia Chớp Vàng.' }),
+  V('artifact_trench', 'artifact', 'Song Đao Chakra', 0, 3, { main: ['atkPct', 'crit'], desc: 'Cặp đao cầm tay truyền chakra phong độn, chém đứt cả đá.' }),
+  // Bậc trung: vũ khí huyền thoại
+  V('artifact_samehada', 'artifact', 'Samehada', 2, 4, { main: ['atkPct', 'hpPct'], desc: 'Đại đao vảy cá mập biết hút chakra, nuôi sống người cầm.' }),
+  V('artifact_kubikiri', 'artifact', 'Đại Đao Chém Đầu', 2, 4, { main: ['atkPct', 'critDmg'], desc: 'Lưỡi đao khổng lồ tự tái tạo bằng máu của kẻ bị chém.' }),
+  V('artifact_kusanagi', 'artifact', 'Kiếm Kusanagi', 2, 5, { main: ['atkPct', 'crit'], desc: 'Thanh kiếm xuyên thủng mọi thứ, có thể vươn dài theo ý chủ nhân.' }),
+  V('artifact_kiba', 'artifact', 'Song Kiếm Nanh Lôi', 2, 4, { main: ['atkPct', 'spd'], desc: 'Hai thanh kiếm dẫn sấm sét, nhanh như tia chớp.' }),
+  V('artifact_gunbai', 'artifact', 'Quạt Chiến Gunbai', 3, 5, { main: ['defPct', 'hpPct'], desc: 'Quạt chiến của tộc trưởng Uchiha, dội ngược mọi nhẫn thuật.' }),
+  // Bậc cao: bảo bối Lục Đạo trong Đại chiến Nhẫn giả lần thứ tư
+  V('artifact_shichiseiken', 'artifact', 'Thất Tinh Kiếm', 4, 5, { main: ['atkPct', 'critDmg'], desc: 'Bảo bối Lục Đạo: lưỡi kiếm bằng chakra, chém vào lời nói để phong ấn linh hồn.' }),
+  V('artifact_bashosen', 'artifact', 'Quạt Ba Tiêu', 4, 5, { main: ['atkPct', 'eff'], desc: 'Bảo bối Lục Đạo: một cái phẩy sinh ra lửa, gió, nước, sấm và đất.' }),
+  V('artifact_benihisago', 'artifact', 'Hồng Hồ Lô', 4, 5, { main: ['hpPct', 'eff'], desc: 'Bảo bối Lục Đạo: hút vào bất cứ ai thốt ra lời dối lòng.' }),
+  V('artifact_kokinjo', 'artifact', 'Kim Thằng', 4, 5, { main: ['hpPct', 'res'], desc: 'Bảo bối Lục Đạo: sợi dây vàng trói và hút lấy linh hồn đối thủ.' }),
+  V('artifact_kohaku', 'artifact', 'Hổ Phách Tịnh Bình', 4, 5, { main: ['hpPct', 'defPct'], desc: 'Bảo bối Lục Đạo: bình hổ phách phong ấn mọi thứ bị hút vào trong.' }),
+  V('artifact_shakujo', 'artifact', 'Tích Trượng Lục Đạo', 4, 5, { main: ['atkPct', 'hpPct'], desc: 'Cây trượng sáu vòng của Lục Đạo Tiên Nhân, mang sức mạnh âm dương.' }),
+  V('artifact_gudodama', 'artifact', 'Cầu Đạo Ngọc', 5, 5, { main: ['atkPct', 'hpPct'], desc: 'Những quả cầu đen của Lục Đạo, hóa thành khiên, gậy hay vũ khí, xóa sổ mọi nhẫn thuật.' }),
+];
+
+const VARIANT_BY_ID = new Map(GEAR_VARIANTS.map((v) => [v.id, v]));
+
+export function variantById(id: string): GearVariant {
+  const v = VARIANT_BY_ID.get(id);
+  if (!v) throw new Error(`Không có mẫu trang bị ${id}`);
+  return v;
+}
+
+/** Các mẫu có thể rơi ra cho ô + phẩm chất này (main: chỉ lấy mẫu có đúng cặp chỉ số chính đó). */
+export function variantsFor(slot: GearSlot, rarity: Rarity, main?: GearStat[]) {
+  const key = main?.join(',');
+  return GEAR_VARIANTS.filter(
+    (v) => v.slot === slot && rarity >= v.rarity[0] && rarity <= v.rarity[1] && (!key || (v.main ?? SLOT_INFO[slot].main).join(',') === key),
+  );
+}
+
+export function rollVariant(rnd: () => number, slot: GearSlot, rarity: Rarity): GearVariant {
+  const list = variantsFor(slot, rarity);
+  return list[Math.floor(rnd() * list.length)];
+}
+
+/** Mẫu của một món (đồ cũ chưa có mẫu thì không có). */
+export const gearVariant = (it: Pick<GearItem, 'variant'>) => VARIANT_BY_ID.get(it.variant);
+
+/** Tên hiển thị của một món. */
+export function gearName(it: Pick<GearItem, 'slot' | 'variant'>) {
+  return VARIANT_BY_ID.get(it.variant)?.name ?? SLOT_INFO[it.slot].name;
 }
