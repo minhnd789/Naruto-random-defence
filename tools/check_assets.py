@@ -100,7 +100,9 @@ def check_pose(path: Path) -> list[str]:
         errs.append(f"chân ở {bottom:.0%} chiều cao, cần ~{POSE_FEET:.0%}")
     ys, xs = np.nonzero(a)
     cx = xs.mean() / w
-    if not (0.35 <= cx <= 0.65):
+    # Tư thế trúng đòn ngả người ra sau nên cho phép lệch nhiều hơn
+    lim = 0.22 if path.stem == "hit" else 0.15
+    if not (0.5 - lim <= cx <= 0.5 + lim):
         errs.append(f"trọng tâm lệch ngang ({cx:.0%}), cần gần 50%")
     if cols[0] < 4 or cols[-1] > w - 5 or rows[0] < 4:
         errs.append("nhân vật chạm mép ảnh (bị cắt)")

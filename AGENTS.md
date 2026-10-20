@@ -6,9 +6,7 @@ Webgame "Ninja Đấu Trường": `game/` (React + PixiJS), `server/` (Fastify +
 
 Theo **`docs/POSE_BRIEF.md`**: 4 tư thế (dash, attack, cast, hit) mỗi ninja, lưu `art/poses/<hero_id>/<pose>.png`. Sau khi vẽ: `python tools/normalize_poses.py <hero_id>` (căn khung) → `python tools/check_assets.py --poses` → `python tools/build_assets.py`, commit cả bản WebP trong `game/public/poses/`. Không sửa code.
 
-Đã có: naruto_sage, sasuke_ems, gaara, sakura.
-
-**Việc đang cần (đợt 2):** 16 ninja ở mục C2 của brief: itachi, kakashi, minato, tsunade, kisame, hinata, madara, pain, tenten, kiba, shino, choji, shikamaru, lee, ino, temari. Thư mục `art/poses/<hero_id>/` đã tạo sẵn.
+Đã có đủ 20/20 ninja. Ninja mới thêm vào game cần 4 tư thế theo cùng brief.
 
 ## Đã xong
 
