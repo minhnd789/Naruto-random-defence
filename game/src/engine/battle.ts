@@ -3,6 +3,7 @@ import {
   BattleEvent,
   CR_MAX,
   DEBUFFS,
+  FURY_MAX,
   Effect,
   Element,
   HeroDef,
@@ -52,6 +53,7 @@ export class Battle {
       hp: h.stats.hp,
       cr: 0,
       cooldowns: {},
+      fury: 0, // vào trận chưa có nộ: không dùng được tuyệt kỹ ngay
       statuses: [],
       alive: true,
     });
@@ -77,7 +79,7 @@ export class Battle {
     return u.statuses.some((x) => x.type === s);
   }
   skillReady(u: Unit, s: SkillDef): boolean {
-    return (u.cooldowns[s.id] ?? 0) <= 0;
+    return (u.cooldowns[s.id] ?? 0) <= 0 && (s.slot !== 3 || u.fury >= 1);
   }
 
   spd(u: Unit): number {
@@ -200,6 +202,8 @@ export class Battle {
 
     const events: BattleEvent[] = [{ t: 'skill', uid: actor.uid, skillId, targets: targets.map((t) => t.uid) }];
     if (skill.cd > 0) actor.cooldowns[skill.id] = skill.cd;
+    // Tuyệt kỹ tốn 1 nộ; đòn khác tích 1 nộ
+    actor.fury = skill.slot === 3 ? actor.fury - 1 : Math.min(FURY_MAX, actor.fury + 1);
 
     // Chí mạng tính một lần cho cả kỹ năng
     let extraTurn = false;

@@ -6,6 +6,8 @@ import { ELEMENT_INFO } from '../engine/heroes';
 import { HeroDef, TeamId } from '../engine/types';
 import { RewardList } from './Items';
 import { Portrait } from './Portrait';
+import { SkillIcon } from './SkillIcon';
+import { STATUS_INFO } from './statusInfo';
 
 type ServerState = { status: 'pending' } | { status: 'done'; outcome: BattleOutcome } | { status: 'error'; message: string };
 
@@ -190,17 +192,27 @@ export function BattleView({
                 </div>
                 {active.hero.skills.map((s) => {
                   const cd = hud.cooldowns[s.id] ?? 0;
+                  const noFury = s.slot === 3 && hud.activeFury < 1;
                   return (
                     <button
                       key={s.id}
                       className={`skill-btn s${s.slot} ${hud.selectedSkillId === s.id ? 'sel' : ''}`}
-                      disabled={cd > 0}
+                      disabled={cd > 0 || noFury}
+                      title={noFury ? 'Cần 1 điểm nộ' : s.name}
                       onClick={() => ctrl?.selectSkill(s.id)}
-                      title={s.name}
                     >
-                      <span className="sk-n">{s.slot === 3 ? '奥' : s.slot}</span>
+                      <SkillIcon skill={s} element={active.hero.element} size={s.slot === 3 ? 80 : 66} className="sk-art" />
+                      <span className="sk-slot">{s.slot === 3 ? '奥' : s.slot}</span>
                       <span className="sk-name">{s.name}</span>
                       {cd > 0 && <span className="sk-cd">{cd}</span>}
+                      {cd === 0 && noFury && <span className="sk-cd fury">Cần nộ</span>}
+                      {s.slot === 3 && (
+                        <span className="fury-pips">
+                          {[0, 1, 2].map((i) => (
+                            <i key={i} className={i < hud.activeFury ? 'on' : ''} />
+                          ))}
+                        </span>
+                      )}
                     </button>
                   );
                 })}
@@ -209,6 +221,7 @@ export function BattleView({
           )}
           {!showSkills && !hud.over && !hud.auto && active && active.team !== hud.mySide && <div className="enemy-turn">Lượt của đối thủ…</div>}
 
+          {hud.inspectUid && <InspectPanel hud={hud} onClose={() => ctrl?.closeInspect()} />}
           {overlay}
           {((rtaEnd && (hud.over || rtaEnd.reason === 'surrender')) || (hud.over && !remote)) && (
             <Result hud={hud} server={battleId ? server : null} rtaEnd={rtaEnd ?? null} onRetry={onRetry} onBack={onBack} backLabel={backLabel} />
@@ -308,6 +321,61 @@ function Result({
             {backLabel}
           </button>
         </div>
+      </div>
+    </div>
+  );
+}
+
+function InspectPanel({ hud, onClose }: { hud: HudState; onClose: () => void }) {
+  const u = hud.units.find((x) => x.uid === hud.inspectUid);
+  if (!u) return null;
+  const el = ELEMENT_INFO[u.hero.element];
+  const mine = u.team === hud.mySide;
+  return (
+    <div className={`inspect ${mine ? 'mine' : 'theirs'}`} style={{ '--el': el.css } as CSSProperties}>
+      <button className="inspect-x" onClick={onClose} title="Đóng">
+        ✕
+      </button>
+      <div className="inspect-head">
+        <Portrait hero={u.hero} size={52} />
+        <div>
+          <b>{u.hero.name}</b>
+          <small>
+            <span style={{ color: el.css }}>{el.icon} {el.name}</span> · {mine ? 'Phe ta' : 'Phe địch'}
+          </small>
+        </div>
+      </div>
+      <div className="inspect-stats">
+        <span>Máu</span>
+        <b>
+          {u.hp.toLocaleString('vi-VN')} / {u.maxHp.toLocaleString('vi-VN')}
+        </b>
+        <span>Hành động</span>
+        <b>{Math.round(u.cr * 100)}%</b>
+        <span>Nộ</span>
+        <b className="fury-row">
+          {[0, 1, 2].map((i) => (
+            <i key={i} className={i < u.fury ? 'on' : ''} />
+          ))}
+          <small>{u.fury}/3</small>
+        </b>
+      </div>
+      <div className="inspect-status">
+        {!u.alive && <p className="muted">Đã gục.</p>}
+        {u.alive && !u.statuses.length && <p className="muted">Không có hiệu ứng nào.</p>}
+        {u.statuses.map((s, i) => {
+          const info = STATUS_INFO[s.type];
+          return (
+            <div key={i} className={`st-row ${info.buff ? 'buff' : 'debuff'}`}>
+              <span className="st-ico">{info.icon}</span>
+              <div>
+                <b>{info.name}</b>
+                <small>{info.desc(s.value)}</small>
+              </div>
+              <em>{s.type === 'shield' ? 'đến khi vỡ' : `${s.turns} lượt`}</em>
+            </div>
+          );
+        })}
       </div>
     </div>
   );

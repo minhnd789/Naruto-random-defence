@@ -80,6 +80,8 @@ export interface Unit {
   hp: number;
   cr: number; // thanh hành động 0..CR_MAX
   cooldowns: Record<string, number>;
+  /** Điểm nộ 0..FURY_MAX: dùng tuyệt kỹ tốn 1 điểm, mỗi lượt dùng đòn khác được 1 điểm. */
+  fury: number;
   statuses: Status[];
   alive: boolean;
 }
@@ -99,3 +101,4 @@ export type BattleEvent =
   | { t: 'end'; winner: TeamId };
 
 export const CR_MAX = 1000;
+export const FURY_MAX = 3;

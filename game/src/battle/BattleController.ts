@@ -1,7 +1,7 @@
 // Vòng lặp trận đấu: lấy lượt từ engine, hỏi người chơi hoặc AI, phát hoạt cảnh
 import { chooseAction, Choice } from '../engine/ai';
 import { Battle, RAGE_START } from '../engine/battle';
-import { HeroDef, SkillDef, TeamId, Unit } from '../engine/types';
+import { HeroDef, SkillDef, Status, TeamId, Unit } from '../engine/types';
 import { BattleScene, BattleTheme } from './BattleScene';
 
 export interface HudUnit {
@@ -12,6 +12,8 @@ export interface HudUnit {
   maxHp: number;
   cr: number; // 0..1
   alive: boolean;
+  fury: number;
+  statuses: Status[];
 }
 
 export interface HudState {
@@ -23,6 +25,10 @@ export interface HudState {
   awaitingInput: boolean;
   selectedSkillId: string | null;
   cooldowns: Record<string, number>;
+  /** Điểm nộ của nhân vật đang tới lượt. */
+  activeFury: number;
+  /** Nhân vật người chơi đang bấm xem thông tin. */
+  inspectUid: string | null;
   auto: boolean;
   speed: number;
   turn: number;
@@ -155,16 +161,29 @@ export class BattleController {
   }
 
   private clickUnit(uid: string) {
-    if (!this.pending || !this.selected) return;
-    const b = this.battle;
-    const actor = this.pending.actor;
-    const s = this.selected;
-    let valid: string[];
-    if (s.target === 'enemy' || s.target === 'ally') valid = b.validTargets(actor, s).map((u) => u.uid);
-    else if (s.target === 'allEnemies') valid = b.enemiesOf(actor).map((u) => u.uid);
-    else valid = b.alive(actor.team).map((u) => u.uid);
-    if (!valid.includes(uid)) return;
-    this.resolvePending({ skillId: s.id, targetUid: uid });
+    if (this.pending && this.selected) {
+      const b = this.battle;
+      const actor = this.pending.actor;
+      const s = this.selected;
+      let valid: string[];
+      if (s.target === 'enemy' || s.target === 'ally') valid = b.validTargets(actor, s).map((u) => u.uid);
+      else if (s.target === 'allEnemies') valid = b.enemiesOf(actor).map((u) => u.uid);
+      else valid = b.alive(actor.team).map((u) => u.uid);
+      if (valid.includes(uid)) {
+        this.inspectUid = null;
+        this.resolvePending({ skillId: s.id, targetUid: uid });
+        return;
+      }
+    }
+    // Không phải mục tiêu: bấm để xem hiệu ứng đang có (bấm lần nữa để đóng)
+    this.inspectUid = this.inspectUid === uid ? null : uid;
+    this.emit();
+  }
+
+  inspectUid: string | null = null;
+  closeInspect() {
+    this.inspectUid = null;
+    this.emit();
   }
 
   /** Server đã tự đánh thay (hết giờ): bỏ giao diện chọn kỹ năng đang mở. */
@@ -203,12 +222,17 @@ export class BattleController {
     this.onState({
       ready: this.ready,
       mySide: this.mySide,
-      units: b.units.map((u) => ({ uid: u.uid, team: u.team, hero: u.hero, hp: u.hp, maxHp: u.maxHp, cr: Math.min(1, u.cr / 1000), alive: u.alive })),
+      units: b.units.map((u) => ({
+        uid: u.uid, team: u.team, hero: u.hero, hp: u.hp, maxHp: u.maxHp, cr: Math.min(1, u.cr / 1000), alive: u.alive,
+        fury: u.fury, statuses: u.statuses.map((s) => ({ ...s })),
+      })),
       order: b.turnOrder(8),
       activeUid: this.lastActive,
       awaitingInput: !!this.pending,
       selectedSkillId: this.selected?.id ?? null,
       cooldowns: active ? { ...active.cooldowns } : {},
+      activeFury: active?.fury ?? 0,
+      inspectUid: this.inspectUid,
       auto: this.auto,
       speed: this.speed,
       turn: b.turnCount,

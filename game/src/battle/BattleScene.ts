@@ -73,6 +73,7 @@ class UnitView {
   dir: number; // hướng tấn công: +1 sang phải, -1 sang trái
   hp: number;
   lagHp: number;
+  fury = 0;
   shield = 0;
   targetable = false;
   dead = false;
@@ -125,7 +126,7 @@ class UnitView {
       style: { fontFamily: FONT, fontSize: 13, fontWeight: '800', fill: 0xffffff, stroke: { color: 0x000000, width: 4 } },
     });
     name.position.set(-BAR_W / 2 + 6, -15);
-    this.statusRow.position.set(-BAR_W / 2 + 6, 13);
+    this.statusRow.position.set(-BAR_W / 2 + 32, 13);
     this.ui.addChild(this.bar, badge, kanji, name, this.statusRow);
     this.marker.poly([-11, -14, 11, -14, 0, 0]).fill({ color: 0xffd23f }).stroke({ width: 2, color: 0x000000 });
     this.marker.position.set(0, -34);
@@ -183,6 +184,13 @@ class UnitView {
     if (this.shield > 0) {
       const sw = Math.min(w, (this.shield / max) * w);
       g.rect(-w / 2, h - 3, sw, 3).fill({ color: 0xbfe8ff });
+    }
+    // 3 ô nộ dưới thanh máu
+    for (let i = 0; i < 3; i++) {
+      const x = -w / 2 + 8 + i * 15, y = h + 9;
+      const on = i < this.fury;
+      g.poly([x, y - 5, x + 5, y, x, y + 5, x - 5, y]).fill({ color: on ? 0xff7a2a : 0x000000, alpha: on ? 1 : 0.55 });
+      g.poly([x, y - 5, x + 5, y, x, y + 5, x - 5, y]).stroke({ width: 1.5, color: on ? 0xffe08a : 0x6b5a4a });
     }
     // vạch chia mỗi 1000 máu
     for (let v = 1000; v < max; v += 1000) {
@@ -603,6 +611,7 @@ export class BattleScene {
       const u = battle.unit(v.unit.uid);
       v.shield = u.statuses.find((s) => s.type === 'shield')?.value ?? 0;
       v.hp = u.hp;
+      v.fury = u.fury;
       v.refreshStatuses();
       v.drawBar();
       this.syncStatusFx(v);
@@ -1083,7 +1092,18 @@ export class BattleScene {
     layer.addChild(dim);
     this.tw.to(dim, { alpha: 0.6 }, 150);
 
-    const pts = fromRight ? [-50, 250, STAGE_W + 50, 175, STAGE_W + 50, 485, -50, 560] : [-50, 175, STAGE_W + 50, 250, STAGE_W + 50, 560, -50, 485];
+    // Dải chéo kéo dài quá hai mép khung 1280 để phủ kín cả màn hình rộng (giữ nguyên độ nghiêng)
+    const EXT = 1400;
+    const lineY = (x0: number, y0: number, x1: number, y1: number, x: number) => y0 + ((y1 - y0) * (x - x0)) / (x1 - x0);
+    const L = -EXT, R = STAGE_W + EXT;
+    const top = fromRight ? [-50, 250, STAGE_W + 50, 175] : [-50, 175, STAGE_W + 50, 250];
+    const bot = fromRight ? [-50, 560, STAGE_W + 50, 485] : [-50, 485, STAGE_W + 50, 560];
+    const pts = [
+      L, lineY(top[0], top[1], top[2], top[3], L),
+      R, lineY(top[0], top[1], top[2], top[3], R),
+      R, lineY(bot[0], bot[1], bot[2], bot[3], R),
+      L, lineY(bot[0], bot[1], bot[2], bot[3], L),
+    ];
     const band = new Container();
     const bandBg = new Graphics().poly(pts).fill({ color: el.color, alpha: 0.95 });
     const bandDark = new Graphics().poly(pts).fill({ color: 0x000000, alpha: 0.45 });
@@ -1103,13 +1123,13 @@ export class BattleScene {
 
     // Đường tốc độ
     const lines: Sprite[] = [];
-    for (let i = 0; i < 26; i++) {
+    for (let i = 0; i < 60; i++) {
       const s = new Sprite(this.streakTex);
       s.anchor.set(0.5);
       s.tint = i % 3 ? 0xffffff : el.color;
       s.alpha = 0.25 + Math.random() * 0.5;
       s.scale.set(1 + Math.random() * 2, 0.6 + Math.random());
-      s.position.set(Math.random() * STAGE_W, 170 + Math.random() * 400);
+      s.position.set(-EXT + Math.random() * (STAGE_W + 2 * EXT), 170 + Math.random() * 400);
       if (!fromRight) s.scale.x *= -1;
       inner.addChild(s);
       lines.push(s);
@@ -1117,8 +1137,8 @@ export class BattleScene {
     const stopLines = this.tw.every((dt) => {
       for (const s of lines) {
         s.x += (fromRight ? -1 : 1) * dt * 2.6;
-        if (fromRight && s.x < -300) s.x = STAGE_W + 300;
-        if (!fromRight && s.x > STAGE_W + 300) s.x = -300;
+        if (fromRight && s.x < -EXT) s.x = STAGE_W + EXT;
+        if (!fromRight && s.x > STAGE_W + EXT) s.x = -EXT;
       }
     });
 

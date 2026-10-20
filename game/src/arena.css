@@ -515,3 +515,279 @@
     display: none;
   }
 }
+
+/* Icon kỹ năng cắt từ spritesheet hiệu ứng */
+.skill-icon {
+  display: inline-grid;
+  place-items: center;
+  border-radius: 50%;
+  background-color: #0d0812;
+  background-repeat: no-repeat;
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--el) 60%, transparent), inset 0 0 18px rgba(0, 0, 0, 0.8);
+  font-weight: 900;
+  color: var(--el);
+  overflow: hidden;
+}
+.skill-btn {
+  overflow: visible;
+  padding: 0;
+}
+.skill-btn .sk-art {
+  position: absolute;
+  inset: 2px;
+  width: auto !important;
+  height: auto !important;
+}
+.sk-slot {
+  position: absolute;
+  top: -6px;
+  left: -6px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  font-weight: 900;
+  color: #2a1600;
+  background: var(--gold);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.6);
+  z-index: 1;
+}
+.skill-btn .sk-cd {
+  background: rgba(0, 0, 0, 0.55);
+  border-radius: 50%;
+  z-index: 1;
+}
+.skill-row .skill-ico {
+  position: relative;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  background: none;
+  border: 0;
+}
+.skill-row .skill-ico .skill-icon {
+  border-radius: 10px;
+}
+.skill-row .skill-ico i {
+  position: absolute;
+  right: -5px;
+  bottom: -5px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-style: normal;
+  font-size: 10px;
+  font-weight: 900;
+  color: #2a1600;
+  background: var(--gold);
+}
+.skill-row.s3 .skill-ico {
+  background: none;
+  border: 0;
+}
+
+/* Điểm nộ */
+.fury-pips {
+  position: absolute;
+  bottom: -2px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 3px;
+  z-index: 2;
+}
+.fury-pips i,
+.fury-row i {
+  width: 10px;
+  height: 10px;
+  transform: rotate(45deg);
+  background: #1a1012;
+  border: 1.5px solid #6b5a4a;
+  display: inline-block;
+}
+.fury-pips i.on,
+.fury-row i.on {
+  background: #ff7a2a;
+  border-color: #ffe08a;
+  box-shadow: 0 0 8px #ff7a2a;
+}
+.sk-cd.fury {
+  font-size: 11px;
+  color: #ffcf9a;
+  text-align: center;
+  line-height: 1.1;
+}
+
+/* Bảng thông tin nhân vật */
+.inspect {
+  position: absolute;
+  left: 84px;
+  bottom: 16px;
+  width: min(330px, calc(100vw - 32px));
+  padding: 14px;
+  border-radius: 16px;
+  pointer-events: auto;
+  background: rgba(12, 8, 16, 0.92);
+  border: 1px solid color-mix(in srgb, var(--el) 50%, transparent);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
+  animation: fadeIn 0.15s ease;
+}
+.inspect.theirs {
+  left: auto;
+  right: 16px;
+  bottom: 150px;
+}
+.inspect-x {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.08);
+  border: 0;
+}
+.inspect-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.inspect-head > div:first-child {
+  border-radius: 50%;
+  border: 2px solid var(--el);
+  background-color: #1a1220;
+}
+.inspect-head b {
+  display: block;
+  font-size: 17px;
+}
+.inspect-head small {
+  font-size: 12px;
+  color: var(--muted);
+}
+.inspect-stats {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px 12px;
+  font-size: 13px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  margin-bottom: 10px;
+}
+.inspect-stats span {
+  color: var(--muted);
+}
+.inspect-stats b {
+  text-align: right;
+}
+.fury-row {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 6px;
+}
+.fury-row small {
+  font-size: 11px;
+  color: var(--muted);
+}
+.inspect-status {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 220px;
+  overflow-y: auto;
+}
+.inspect-status p {
+  margin: 4px 0;
+  font-size: 13px;
+}
+.st-row {
+  display: grid;
+  grid-template-columns: 30px 1fr auto;
+  gap: 8px;
+  align-items: center;
+  padding: 6px 8px;
+  border-radius: 10px;
+  background: rgba(58, 212, 255, 0.08);
+}
+.st-row.debuff {
+  background: rgba(200, 60, 140, 0.12);
+}
+.st-ico {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  font-weight: 900;
+  background: #2f6fd1;
+}
+.st-row.debuff .st-ico {
+  background: #7a2a8a;
+}
+.st-row b {
+  display: block;
+  font-size: 13px;
+}
+.st-row small {
+  font-size: 11px;
+  color: var(--muted);
+}
+.st-row em {
+  font-style: normal;
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--gold);
+  white-space: nowrap;
+}
+
+/* Kéo thả đội hình */
+.f-slot {
+  position: relative;
+  user-select: none;
+}
+.f-slot.filled {
+  cursor: grab;
+}
+.f-slot.picking {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 2px var(--gold), 0 0 16px rgba(255, 207, 90, 0.5);
+}
+.f-slot.drop {
+  border-color: #7af0ff;
+  background: rgba(122, 240, 255, 0.15);
+}
+.f-remove {
+  position: absolute;
+  top: -7px;
+  right: -7px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 0;
+  cursor: pointer;
+  font-weight: 900;
+  line-height: 1;
+  color: #fff;
+  background: #c4202e;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.f-slot:hover .f-remove,
+.f-slot.picking .f-remove {
+  opacity: 1;
+}
+@media (hover: none) {
+  .f-remove {
+    opacity: 1;
+  }
+}

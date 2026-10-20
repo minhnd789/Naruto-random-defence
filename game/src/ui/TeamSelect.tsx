@@ -5,6 +5,7 @@ import { ELEMENT_INFO, HEROES, ROLE_NAME, heroById } from '../engine/heroes';
 import { HeroProgress, MAX_AWAKEN, UnitSetup, computeStats, power } from '../engine/progression';
 import { HeroDef } from '../engine/types';
 import { Portrait } from './Portrait';
+import { SkillIcon } from './SkillIcon';
 
 export const ENEMY_PRESETS: { id: string; name: string; desc: string; heroes: string[] }[] = [
   { id: 'akatsuki', name: 'Akatsuki Tập Kích', desc: 'Khống chế mạnh, nhiều sát thương diện rộng', heroes: ['kisame', 'pain', 'itachi', 'madara', 'sasuke_ems'] },
@@ -23,12 +24,28 @@ export function Stars({ n, awaken = 0 }: { n: number; awaken?: number }) {
   );
 }
 
-export function HeroCard({ hero, slot, onClick, onHover, prog }: { hero: HeroDef; slot: number; onClick: () => void; onHover: () => void; prog?: HeroProgress }) {
+export function HeroCard({
+  hero,
+  slot,
+  onClick,
+  onHover,
+  prog,
+  draggable,
+}: {
+  hero: HeroDef;
+  slot: number;
+  onClick: () => void;
+  onHover: () => void;
+  prog?: HeroProgress;
+  draggable?: boolean;
+}) {
   const el = ELEMENT_INFO[hero.element];
   return (
     <button
       className={`hero-card r${hero.rarity} ${slot >= 0 ? 'picked' : ''}`}
       style={{ '--el': el.css } as CSSProperties}
+      draggable={draggable}
+      onDragStart={draggable ? (e) => e.dataTransfer.setData('text/hero', hero.id) : undefined}
       onClick={onClick}
       onMouseEnter={onHover}
       onFocus={onHover}
@@ -82,7 +99,10 @@ export function HeroDetail({ hero, dupes, progress, children }: { hero: HeroDef;
       <div className="skills">
         {hero.skills.map((sk) => (
           <div key={sk.id} className={`skill-row s${sk.slot}`}>
-            <span className="skill-ico">{sk.slot}</span>
+            <span className="skill-ico">
+              <SkillIcon skill={sk} element={hero.element} size={38} />
+              <i>{sk.slot === 3 ? '奥' : sk.slot}</i>
+            </span>
             <div>
               <b>{sk.name}</b> {sk.cd > 0 && <small className="cd">Hồi {sk.cd} lượt</small>}
               <p>{sk.desc}</p>
@@ -149,6 +169,8 @@ export function TeamSelect({
   const [team, setTeam] = useState<(string | null)[]>(() => [...initial.filter((id) => ownedIds.includes(id)), null, null, null, null, null].slice(0, 5));
   const [enemy, setEnemy] = useState(ENEMY_PRESETS[0].id);
   const [hover, setHover] = useState<HeroDef>(heroById(initial[0] ?? roster[0].id));
+  const [picked, setPicked] = useState<number | null>(null);
+  const [dragOver, setDragOver] = useState<number | null>(null);
 
   const toggle = (id: string) => {
     setTeam((t) => {
@@ -169,17 +191,76 @@ export function TeamSelect({
   const enemyPower = mission ? teamPower(mission.enemies) : 0;
   const lackStamina = mission ? stamina < mission.stamina : false;
 
+  /** Đặt ninja vào ô i; nếu ninja đã ở ô khác thì hai ô đổi chỗ cho nhau. */
+  const place = (heroId: string, i: number) =>
+    setTeam((t) => {
+      const next = [...t];
+      const from = next.indexOf(heroId);
+      if (from >= 0) next[from] = next[i];
+      next[i] = heroId;
+      return next;
+    });
+  const swap = (a: number, b: number) =>
+    setTeam((t) => {
+      const next = [...t];
+      [next[a], next[b]] = [next[b], next[a]];
+      return next;
+    });
+
   const slotView = (i: number) => {
     const id = team[i];
     const h = id ? heroById(id) : null;
     return (
-      <button key={i} className={`f-slot ${h ? 'filled' : ''}`} onClick={() => id && toggle(id)} title={h ? 'Bấm để bỏ' : 'Ô trống'}>
+      <div
+        key={i}
+        role="button"
+        tabIndex={0}
+        className={`f-slot ${h ? 'filled' : ''} ${picked === i ? 'picking' : ''} ${dragOver === i ? 'drop' : ''}`}
+        draggable={!!h}
+        onDragStart={(e) => e.dataTransfer.setData('text/slot', String(i))}
+        onDragOver={(e) => {
+          e.preventDefault();
+          setDragOver(i);
+        }}
+        onDragLeave={() => setDragOver((d) => (d === i ? null : d))}
+        onDrop={(e) => {
+          e.preventDefault();
+          setDragOver(null);
+          const from = e.dataTransfer.getData('text/slot');
+          const hero = e.dataTransfer.getData('text/hero');
+          if (from !== '') swap(Number(from), i);
+          else if (hero) place(hero, i);
+          setPicked(null);
+        }}
+        onClick={() => {
+          if (picked === null) setPicked(h ? i : null);
+          else if (picked === i) setPicked(null);
+          else {
+            swap(picked, i);
+            setPicked(null);
+          }
+        }}
+        title={h ? 'Kéo thả hoặc chạm để đổi chỗ' : 'Ô trống: kéo một ninja vào đây'}
+      >
         {h ? <Portrait hero={h} size={62} /> : <span className="plus">+</span>}
         <small>
           {h ? h.name : SLOT_LABEL[i]}
           {h && <em className="lv"> Lv{progOf(owned, h.id).level}</em>}
         </small>
-      </button>
+        {h && (
+          <button
+            className="f-remove"
+            title="Bỏ khỏi đội"
+            onClick={(e) => {
+              e.stopPropagation();
+              setPicked(null);
+              toggle(h.id);
+            }}
+          >
+            ×
+          </button>
+        )}
+      </div>
     );
   };
 
@@ -198,7 +279,7 @@ export function TeamSelect({
           <h2>Chọn 5 ninja ({roster.length} đang sở hữu)</h2>
           <div className="grid">
             {roster.map((h) => (
-              <HeroCard key={h.id} hero={h} prog={progOf(owned, h.id)} slot={team.indexOf(h.id)} onClick={() => toggle(h.id)} onHover={() => setHover(h)} />
+              <HeroCard key={h.id} hero={h} prog={progOf(owned, h.id)} slot={team.indexOf(h.id)} draggable onClick={() => toggle(h.id)} onHover={() => setHover(h)} />
             ))}
           </div>
         </section>
@@ -217,7 +298,7 @@ export function TeamSelect({
               {[0, 1].map(slotView)}
             </div>
           </div>
-          <p className="hint">Đòn đánh đơn phải nhắm hàng trước khi hàng trước còn người. Hãy đặt tướng đỡ đòn ở hàng trước.</p>
+          <p className="hint">Kéo thả để đổi vị trí (trên điện thoại: chạm ô này rồi chạm ô kia). Đòn đánh đơn phải nhắm hàng trước khi hàng trước còn người, nên đặt tướng đỡ đòn ở hàng trước.</p>
           {mission ? (
             <>
               <h2>Kẻ địch · Lực chiến {enemyPower.toLocaleString('vi-VN')}</h2>
